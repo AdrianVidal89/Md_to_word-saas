@@ -27,6 +27,7 @@ from auth import (
     log_conversion,
     mark_custom_template_trial_used,
     require_user,
+    require_user_for_conversion,
 )
 from converter import build_docx, parse
 from database import get_supabase
@@ -162,7 +163,7 @@ async def convert_with_template(
     title: Optional[str] = Form(default=None),
     author: Optional[str] = Form(default=None),
     filename: str = Form(default="documento"),
-    user: AuthenticatedUser = Depends(require_user),
+    user: AuthenticatedUser = Depends(require_user_for_conversion),
 ):
     check_custom_template_quota(user)
 

@@ -102,9 +102,15 @@ def _load_or_create_profile(supabase, user_id: str, email: Optional[str]) -> dic
     return inserted.data[0]
 
 
-def _check_ip_abuse(supabase, profile: dict, ip: str) -> None:
+def _check_ip_abuse(supabase, profile: dict, ip: str) -> int:
+    """Registra la IP de origen en la ventana deslizante de 24h y devuelve el
+    nº de IPs distintas observadas. NO lanza 403: la resolución de identidad
+    (/api/me, listar plantillas, etc.) debe funcionar SIEMPRE, aunque el pro
+    aparezca desde muchas IPs (típico en móvil/5G, donde la IP cambia sola).
+    El bloqueo por posible cuenta compartida (§5.4) lo decide únicamente el
+    endpoint de conversión (ver require_user_for_conversion)."""
     if profile.get("tier") != "pro":
-        return
+        return 0
 
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=24)
@@ -125,14 +131,7 @@ def _check_ip_abuse(supabase, profile: dict, ip: str) -> None:
 
     supabase.table("users").update({"last_ips": recent}).eq("id", profile["id"]).execute()
 
-    if len(distinct_ips) > PRO_MAX_IPS_24H:
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN,
-            detail=(
-                f"Se han detectado {len(distinct_ips)} IPs distintas en 24h para esta cuenta "
-                "Pro. Conversión bloqueada por posible cuenta compartida."
-            ),
-        )
+    return len(distinct_ips)
 
 
 async def get_current_user_optional(
@@ -152,7 +151,9 @@ async def get_current_user_optional(
 
     supabase = get_supabase()
     profile = _load_or_create_profile(supabase, user_id, payload.get("email"))
-    _check_ip_abuse(supabase, profile, get_client_ip(request))
+    # Registramos la IP y guardamos el nº de IPs distintas en request.state,
+    # pero NO bloqueamos aquí: solo el endpoint de conversión lo enforcea.
+    request.state.pro_ip_count = _check_ip_abuse(supabase, profile, get_client_ip(request))
 
     return AuthenticatedUser(
         id=profile["id"],
@@ -167,6 +168,25 @@ async def require_user(
 ) -> AuthenticatedUser:
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Se requiere iniciar sesión")
+    return user
+
+
+async def require_user_for_conversion(
+    request: Request,
+    user: AuthenticatedUser = Depends(require_user),
+) -> AuthenticatedUser:
+    """Igual que require_user pero aplica el anti-abuso de cuentas Pro (§5.4):
+    si en 24h se han visto más de PRO_MAX_IPS_24H IPs distintas, se bloquea
+    SOLO la conversión con 403 (no la identidad ni las lecturas). El conteo lo
+    dejó get_current_user_optional en request.state.pro_ip_count."""
+    if getattr(request.state, "pro_ip_count", 0) > PRO_MAX_IPS_24H:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            detail=(
+                f"Se han detectado {request.state.pro_ip_count} IPs distintas en 24h para esta "
+                "cuenta Pro. Conversión bloqueada por posible cuenta compartida."
+            ),
+        )
     return user
 
 
