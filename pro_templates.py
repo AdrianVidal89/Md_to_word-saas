@@ -202,7 +202,12 @@ async def convert_with_template(
     return Response(
         content=docx_bytes,
         media_type=DOCX_MEDIA_TYPE,
-        headers={"Content-Disposition": f'attachment; filename="{safe_name}.docx"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name}.docx"',
+            # Le dice al wizard si esta descarga consumió la prueba gratuita,
+            # para que el mensaje de éxito sea preciso (ver CLAUDE.md §5.2).
+            "X-MD2Docx-Trial-Used": "true" if is_trial else "false",
+        },
     )
 
 

@@ -45,6 +45,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-MD2Docx-Trial-Used"],
 )
 
 if (WEB_DIR / "assets").exists():
