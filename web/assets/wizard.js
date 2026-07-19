@@ -39,6 +39,18 @@ window.renderWizard = async function renderWizard() {
   paintWizard();
 };
 
+// Deep-link desde el panel "Tu espacio Pro" de la home: abre el studio
+// directamente en el paso de conversión de una plantilla concreta, sin
+// pasar por la lista (a diferencia de showApp(), que resetea a "list").
+window.openTemplateInStudio = function openTemplateInStudio(id, name) {
+  wizard.currentId = id;
+  wizard.currentName = name;
+  wizard.view = "step3";
+  document.getElementById("landing-view").classList.add("hidden");
+  document.getElementById("app-view").classList.remove("hidden");
+  paintWizard();
+};
+
 // ---------------------------------------------------------------------
 // Shell "studio": barra oscura con título + stepper, cuerpo con la
 // vista activa. Visualmente distinto de la landing de marketing, para

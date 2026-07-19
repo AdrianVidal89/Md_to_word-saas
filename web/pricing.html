@@ -57,7 +57,7 @@
     <p class="text-slate-500" data-i18n="pricing.subtitle">Start free. Upgrade only when you need your own template.</p>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 max-w-3xl mx-auto">
     <div class="border border-slate-200 rounded-2xl p-6 flex flex-col">
       <h2 class="font-bold text-lg text-slate-900" data-i18n="pricing.free.name">Free</h2>
       <p class="text-4xl font-extrabold my-3 text-slate-900" data-i18n="pricing.free.price">€0</p>
@@ -87,20 +87,10 @@
       </ul>
       <button id="pricing-pro-cta" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-4 py-2 text-sm" data-i18n="pricing.pro.cta">Upload your template</button>
     </div>
+  </div>
 
-    <div class="border border-slate-200 rounded-2xl p-6 flex flex-col">
-      <h2 class="font-bold text-lg text-slate-900" data-i18n="pricing.api.name">API</h2>
-      <p class="text-4xl font-extrabold my-3 text-slate-900" data-i18n="pricing.api.price">Pay per use</p>
-      <p class="text-xs text-slate-400 mb-4">&nbsp;</p>
-      <p class="text-sm text-slate-500 mb-5" data-i18n="pricing.api.desc">For CI/CD pipelines and product integrations.</p>
-      <ul class="text-sm text-slate-600 space-y-2 mb-6 flex-1">
-        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.api.f1">Machine-to-machine endpoint</span></li>
-        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.api.f2">Authenticated with an API key</span></li>
-        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.api.f3">No per-seat pricing</span></li>
-        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.api.f4">Built for automation</span></li>
-      </ul>
-      <a href="/api-access" class="text-center border border-slate-300 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-50" data-i18n="pricing.api.cta">Talk to us</a>
-    </div>
+  <div class="text-center mb-16">
+    <a href="/api-access" class="text-sm text-slate-500 hover:text-emerald-700 font-medium" data-i18n="pricing.devLink">Building a product or CI/CD pipeline? See API access →</a>
   </div>
 
   <div class="max-w-2xl mx-auto">
@@ -162,7 +152,7 @@
   </div>
 </div>
 
-<script src="/assets/shared.js"></script>
+<script src="/assets/shared.js?v=__ASSET_VERSION__"></script>
 <script>
 const CONFIG = {
   SUPABASE_URL: "__SUPABASE_URL__",

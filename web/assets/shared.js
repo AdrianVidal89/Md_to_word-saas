@@ -21,6 +21,21 @@ const I18N = {
       downloaded: "Document downloaded ✔",
       buildingTitle: "Building your document…",
     },
+    howitworks: {
+      title: "How it works",
+      step1: { title: "Paste", desc: "Drop in the answer your AI gave you — Markdown, plain text, whatever." },
+      step2: { title: "Pick a template", desc: "Use the clean default, or your own corporate template with Pro." },
+      step3: { title: "Download Word", desc: "Get a ready-to-send .docx in seconds. No tags, no code." },
+    },
+    proToolbox: {
+      title: "Your Pro space",
+      subtitle: "Everything you need, one click away — no upsell.",
+      convertBtn: "Convert with my template",
+      manageBtn: "Manage my templates",
+      apiBtn: "API access",
+      recentLabel: "Your templates",
+      empty: "You haven't uploaded a template yet — start in the studio.",
+    },
     compare: {
       title: "Good enough to ship. Better with your own brand.",
       subtitle: "The free output already looks clean. Upload your corporate template once and every future document inherits it automatically.",
@@ -49,8 +64,11 @@ const I18N = {
         "- At least one table if there's data to compare",
         "- A short conclusion at the end",
         "",
-        "Format the answer in Markdown (#, ##, tables) so it converts cleanly.",
+        "IMPORTANT: give me the WHOLE report as raw Markdown (#, ##, tables)",
+        "inside a single code block, as plain text — do NOT render it.",
+        "I need to copy the Markdown source itself.",
       ],
+      note: "Tip: in Gemini, add \"show it in a code block (plain text)\" or it will format the text instead of giving you the raw Markdown. ChatGPT and Claude usually return it raw already — every AI is a little different.",
       copyBtn: "Copy prompt",
       copiedBtn: "Copied ✔",
     },
@@ -116,6 +134,7 @@ const I18N = {
         f1: "Machine-to-machine endpoint", f2: "Authenticated with an API key", f3: "No per-seat pricing", f4: "Built for automation",
         cta: "Talk to us" },
       faqTitle: "Questions",
+      devLink: "Building a product or CI/CD pipeline? See API access →",
       faq1q: "Is the free plan really unlimited?", faq1a: "Yes. It's rate-limited per IP only to stop abuse scripts, never to limit a real person.",
       faq2q: "What happens after my 1 free Pro download?", faq2a: "You'll see a clear upgrade prompt — never a blurred or fake preview. The first download is always the real, complete file.",
       faq3q: "Can I cancel anytime?", faq3a: "Yes. Pro is billed monthly, cancel whenever you want — no lock-in.",
@@ -135,9 +154,15 @@ const I18N = {
       paramTitle: "document title (used if not already in frontmatter)",
       paramAuthor: "document author (used if not already in frontmatter)",
       paramFilename: "output filename, without extension",
-      pricingTitle: "Pricing",
-      pricingDesc: "Pay per conversion — no seats, no minimums. See the",
-      pricingLink: "pricing page",
+      pricingTitle: "API pricing",
+      pricingPlan: "API B2B",
+      pricingPrice: "€19.00",
+      pricingPeriod: "/ month",
+      pricingOverage: "+ €0.05 per conversion over your monthly quota",
+      pricingF1: "Server-to-server endpoint (X-API-Key)",
+      pricingF2: "For third-party software integrators",
+      pricingF3: "No per-seat pricing",
+      pricingF4: "Usage-based billing, cancel anytime",
       ctaTitle: "Want access?",
       ctaDesc: "Tell us about your use case and we'll set you up with a key.",
       cta: "Get API access",
@@ -160,6 +185,21 @@ const I18N = {
       converting: "Convirtiendo…",
       downloaded: "Documento descargado ✔",
       buildingTitle: "Generando tu documento…",
+    },
+    howitworks: {
+      title: "Cómo funciona",
+      step1: { title: "Pega", desc: "Suelta la respuesta que te dio tu IA — Markdown, texto plano, lo que sea." },
+      step2: { title: "Elige plantilla", desc: "Usa la genérica limpia, o tu propia plantilla corporativa con Pro." },
+      step3: { title: "Descarga Word", desc: "Consigue un .docx listo para enviar en segundos. Sin tags, sin código." },
+    },
+    proToolbox: {
+      title: "Tu espacio Pro",
+      subtitle: "Todo lo que necesitas, a un clic — sin publicidad de upgrade.",
+      convertBtn: "Convertir con mi plantilla",
+      manageBtn: "Gestionar mis plantillas",
+      apiBtn: "Acceso API",
+      recentLabel: "Tus plantillas",
+      empty: "Todavía no has subido ninguna plantilla — empieza en el studio.",
     },
     compare: {
       title: "Listo para usar tal cual. Mejor con tu propia marca.",
@@ -189,8 +229,11 @@ const I18N = {
         "- Al menos una tabla si hay datos que comparar",
         "- Una breve conclusión al final",
         "",
-        "Formatea la respuesta en Markdown (#, ##, tablas) para que se convierta bien.",
+        "IMPORTANTE: dame TODO el informe como Markdown en bruto (#, ##, tablas)",
+        "dentro de un único bloque de código, como texto plano — NO lo renderices.",
+        "Necesito copiar el propio código Markdown.",
       ],
+      note: "Truco: en Gemini, añade \"muéstramelo en un bloque de código (texto plano)\" o te formateará el texto en vez de darte el Markdown en bruto. ChatGPT y Claude suelen devolverlo ya en bruto — cada IA es un poco distinta.",
       copyBtn: "Copiar prompt",
       copiedBtn: "Copiado ✔",
     },
@@ -256,6 +299,7 @@ const I18N = {
         f1: "Endpoint máquina a máquina", f2: "Autenticado con API key", f3: "Sin coste por asiento", f4: "Pensado para automatización",
         cta: "Hablemos" },
       faqTitle: "Preguntas frecuentes",
+      devLink: "¿Construyes un producto o un pipeline de CI/CD? Mira el acceso API →",
       faq1q: "¿El plan free es de verdad ilimitado?", faq1a: "Sí. Solo tiene un límite por IP para frenar scripts de abuso, nunca para limitar a una persona real.",
       faq2q: "¿Qué pasa tras mi 1 descarga gratis de Pro?", faq2a: "Verás un aviso claro para hacerte Pro — nunca una preview difuminada o falsa. La primera descarga siempre es el fichero real y completo.",
       faq3q: "¿Puedo cancelar cuando quiera?", faq3a: "Sí. Pro se factura mensualmente, cancela cuando quieras — sin permanencia.",
@@ -275,9 +319,15 @@ const I18N = {
       paramTitle: "título del documento (si no viene ya en el frontmatter)",
       paramAuthor: "autor del documento (si no viene ya en el frontmatter)",
       paramFilename: "nombre del fichero de salida, sin extensión",
-      pricingTitle: "Precio",
-      pricingDesc: "Pago por conversión — sin asientos, sin mínimos. Mira la",
-      pricingLink: "página de precios",
+      pricingTitle: "Precio de la API",
+      pricingPlan: "API B2B",
+      pricingPrice: "19,00€",
+      pricingPeriod: "/ mes",
+      pricingOverage: "+ 0,05€ por conversión de overage sobre tu cuota mensual",
+      pricingF1: "Endpoint server-to-server (X-API-Key)",
+      pricingF2: "Para integradores de software de terceros",
+      pricingF3: "Sin coste por asiento",
+      pricingF4: "Facturación por uso, cancela cuando quieras",
       ctaTitle: "¿Quieres acceso?",
       ctaDesc: "Cuéntanos tu caso de uso y te damos una clave.",
       cta: "Solicitar acceso API",
@@ -396,16 +446,17 @@ function closeModal(id) {
 }
 
 /**
- * Tras login/signup con sesión, el usuario debe aterrizar en "su página"
- * (el wizard Pro) en vez de quedarse "pillado" en la landing. Si estamos
- * en home, se abre directo; si no, se navega a home con #app y home lo
- * detecta al cargar.
+ * Tras login/signup con sesión, el usuario aterriza en la HOME limpia (el
+ * conversor), NO en el wizard de plantillas — iniciar sesión no debería
+ * empujarte directo a "sube tu plantilla". El área Pro sigue a un clic
+ * ("Mis plantillas" en el header, o los CTAs explícitos de subir plantilla,
+ * que sí abren el studio a propósito vía showApp()/#app).
  */
 function goToUserArea() {
-  if (window.location.pathname === "/" && typeof window.showApp === "function") {
-    window.showApp();
+  if (window.location.pathname === "/") {
+    if (typeof window.showLanding === "function") window.showLanding();
   } else {
-    window.location.href = "/#app";
+    window.location.href = "/";
   }
 }
 

@@ -17,6 +17,7 @@ threadpool (`run_in_threadpool`) para no bloquear el event loop de asyncio,
 tal y como señala el análisis de arquitectura del monolito original.
 """
 
+import hashlib
 import os
 from pathlib import Path
 from typing import Optional
@@ -71,6 +72,21 @@ def _site_url(request: Request) -> str:
     return str(request.base_url).rstrip("/")
 
 
+def _asset_version() -> str:
+    """Hash corto del contenido de los JS compartidos, usado como query
+    `?v=` en los <script> de assets para invalidar la caché del navegador
+    en cada deploy que los toque. Sin esto, un usuario con el `shared.js`
+    viejo en caché ve el HTML nuevo pero el i18n antiguo lo sobrescribe
+    (los textos traducibles revierten a la versión anterior). Se recalcula
+    por request: el coste es leer dos ficheros pequeños, despreciable."""
+    h = hashlib.sha256()
+    for name in ("shared.js", "wizard.js"):
+        f = WEB_DIR / "assets" / name
+        if f.exists():
+            h.update(f.read_bytes())
+    return h.hexdigest()[:10]
+
+
 def _render_page(request: Request, filename: str) -> HTMLResponse:
     html = (WEB_DIR / filename).read_text(encoding="utf-8")
     options_html = "".join(
@@ -81,6 +97,7 @@ def _render_page(request: Request, filename: str) -> HTMLResponse:
     html = html.replace("__SUPABASE_ANON_KEY__", os.environ.get("PUBLIC_SUPABASE_ANON_KEY", ""))
     html = html.replace("__API_BASE_URL__", os.environ.get("PUBLIC_API_BASE_URL", ""))
     html = html.replace("__SITE_URL__", _site_url(request))
+    html = html.replace("__ASSET_VERSION__", _asset_version())
     return HTMLResponse(html)
 
 
