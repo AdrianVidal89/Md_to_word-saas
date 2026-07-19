@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MD2Docx — Markdown a Word</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1419;
+    --panel: #161b22;
+    --border: #2a313c;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #3dcd58;
+    --accent-blue: #00b0f0;
+    --danger: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 18px; margin: 0; }
+  header h1 span { color: var(--accent); }
+  #auth-area { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  #auth-area button {
+    background: var(--accent);
+    border: none;
+    color: #06210c;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  #auth-area button.secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  #tier-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--accent-blue);
+    color: var(--accent-blue);
+    text-transform: uppercase;
+  }
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 16px 20px;
+  }
+  .pane {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    min-height: 60vh;
+  }
+  .pane-title {
+    padding: 8px 12px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  #editor {
+    flex: 1;
+    background: transparent;
+    color: var(--text);
+    border: none;
+    resize: none;
+    padding: 12px;
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 13px;
+    outline: none;
+  }
+  #preview-wrap { position: relative; flex: 1; overflow: auto; }
+  #preview { padding: 12px; font-size: 14px; line-height: 1.5; }
+  #preview blockquote {
+    border-left: 3px solid var(--accent);
+    margin: 0;
+    padding-left: 12px;
+    color: var(--muted);
+  }
+  #preview table { border-collapse: collapse; width: 100%; }
+  #preview th, #preview td { border: 1px solid var(--border); padding: 4px 8px; }
+  .hint { font-size: 11px; color: var(--muted); padding: 6px 12px; }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    padding: 0 20px 16px;
+  }
+  .toolbar input[type="text"], .toolbar select {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .toolbar label.file-label {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  #convert-btn {
+    margin-left: auto;
+    background: var(--accent-blue);
+    border: none;
+    color: #001824;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  #convert-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  #status-msg { padding: 0 20px 10px; font-size: 13px; }
+  #status-msg.error { color: var(--danger); }
+  #status-msg.ok { color: var(--accent); }
+
+  /* Modales genéricos (auth) */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    width: 320px;
+  }
+  .modal h2 { margin-top: 0; font-size: 16px; }
+  .modal input {
+    width: 100%;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+  }
+  .modal button.primary {
+    width: 100%;
+    background: var(--accent);
+    border: none;
+    color: #06210c;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .modal .switch-link { font-size: 12px; color: var(--accent-blue); cursor: pointer; margin-top: 10px; display: inline-block; }
+  .modal .modal-error { color: var(--danger); font-size: 12px; min-height: 14px; margin-bottom: 6px; }
+  .modal .close-x { float: right; cursor: pointer; color: var(--muted); }
+
+  /* Overlay de upsell ("el caramelo") */
+  #upsell-blur {
+    filter: blur(5px);
+    pointer-events: none;
+    user-select: none;
+  }
+  #upsell-modal {
+    position: absolute; inset: 0;
+    display: none;
+    align-items: center; justify-content: center;
+    background: rgba(15,20,25,0.35);
+  }
+  #upsell-modal.open { display: flex; }
+  #upsell-modal .card {
+    background: var(--panel);
+    border: 1px solid var(--accent-blue);
+    border-radius: 10px;
+    padding: 24px;
+    max-width: 320px;
+    text-align: center;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  }
+  #upsell-modal .card h3 { margin-top: 0; color: var(--accent-blue); }
+  #upsell-modal .card a.cta {
+    display: inline-block;
+    margin-top: 14px;
+    background: var(--accent-blue);
+    color: #001824;
+    padding: 10px 18px;
+    border-radius: 6px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>MD2<span>Docx</span></h1>
+  <div id="auth-area">
+    <span id="tier-badge" style="display:none;"></span>
+    <span id="user-email" style="display:none; color: var(--muted);"></span>
+    <button id="btn-logout" class="secondary" style="display:none;">Salir</button>
+    <button id="btn-login" class="secondary">Entrar</button>
+    <button id="btn-signup">Crear cuenta</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <label class="file-label">Plantilla:
+    <select id="template-select">
+      <option value="none">Sin plantilla</option>
+      <!--TEMPLATE_OPTIONS-->
+    </select>
+  </label>
+  <input type="text" id="title-input" placeholder="Título (opcional)" />
+  <input type="text" id="author-input" placeholder="Autor (opcional)" />
+  <input type="text" id="filename-input" placeholder="nombre-fichero" value="documento" />
+  <label class="file-label">
+    Plantilla .docx propia:
+    <input type="file" id="custom-template-input" accept=".docx" />
+  </label>
+  <button id="convert-btn">Descargar DOCX</button>
+</div>
+<div id="status-msg"></div>
+
+<main>
+  <div class="pane">
+    <div class="pane-title">Markdown</div>
+    <textarea id="editor" placeholder="# Escribe tu Markdown aquí..."></textarea>
+  </div>
+  <div class="pane">
+    <div class="pane-title">Vista previa (aproximada al resultado en Word)</div>
+    <div id="preview-wrap">
+      <div id="preview"></div>
+      <div id="upsell-modal">
+        <div class="card">
+          <h3>Documento con formato corporativo listo 🎉</h3>
+          <p id="upsell-message"></p>
+          <a id="upsell-cta" class="cta" href="#" target="_blank" rel="noopener">Pasar a Pro</a>
+        </div>
+      </div>
+    </div>
+    <div class="hint">Vista previa aproximada — el resultado final se genera en el servidor.</div>
+  </div>
+</main>
+
+<!-- Modal de Login -->
+<div class="modal-overlay" id="login-overlay">
+  <div class="modal">
+    <span class="close-x" data-close="login-overlay">✕</span>
+    <h2>Iniciar sesión</h2>
+    <div class="modal-error" id="login-error"></div>
+    <input type="email" id="login-email" placeholder="Email" />
+    <input type="password" id="login-password" placeholder="Contraseña" />
+    <button class="primary" id="login-submit">Entrar</button>
+    <span class="switch-link" data-switch="signup-overlay" data-close="login-overlay">¿No tienes cuenta? Regístrate</span>
+  </div>
+</div>
+
+<!-- Modal de Signup -->
+<div class="modal-overlay" id="signup-overlay">
+  <div class="modal">
+    <span class="close-x" data-close="signup-overlay">✕</span>
+    <h2>Crear cuenta</h2>
+    <div class="modal-error" id="signup-error"></div>
+    <input type="email" id="signup-email" placeholder="Email" />
+    <input type="password" id="signup-password" placeholder="Contraseña (mín. 6 caracteres)" />
+    <button class="primary" id="signup-submit">Crear cuenta</button>
+    <span class="switch-link" data-switch="login-overlay" data-close="signup-overlay">¿Ya tienes cuenta? Entra</span>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "__SUPABASE_URL__";
+const SUPABASE_ANON_KEY = "__SUPABASE_ANON_KEY__";
+const API_BASE_URL = "__API_BASE_URL__" || "";
+
+const supabaseClient = (SUPABASE_URL && SUPABASE_ANON_KEY)
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+// ---------------------------------------------------------------------
+// Editor + preview (réplica ligera de la lógica Pass/Fail del builder)
+// ---------------------------------------------------------------------
+const editor = document.getElementById("editor");
+const preview = document.getElementById("preview");
+let previewTimer = null;
+
+function stripFrontmatter(md) {
+  return md.replace(/^---\n[\s\S]*?\n---\n/, "");
+}
+
+function colorizePassFail(root) {
+  root.querySelectorAll("td").forEach((td) => {
+    const upper = td.textContent.trim().toUpperCase();
+    if (upper.startsWith("PASS") || upper === "OK" || upper === "✓") {
+      td.style.background = "#c6efce"; td.style.color = "#1a3d1a";
+    } else if (upper.startsWith("FAIL") || upper === "KO" || upper === "NOK" || upper === "✗") {
+      td.style.background = "#ffc7ce"; td.style.color = "#5b1a1a";
+    }
+  });
+}
+
+function renderPreview() {
+  const html = marked.parse(stripFrontmatter(editor.value || ""));
+  preview.innerHTML = html;
+  colorizePassFail(preview);
+}
+
+editor.addEventListener("input", () => {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(renderPreview, 150);
+});
+renderPreview();
+
+// Drag & drop de .md
+editor.addEventListener("dragover", (e) => e.preventDefault());
+editor.addEventListener("drop", (e) => {
+  e.preventDefault();
+  const f = e.dataTransfer.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => { editor.value = reader.result; renderPreview(); };
+  reader.readAsText(f);
+});
+
+// ---------------------------------------------------------------------
+// Auth: modales + estado de sesión
+// ---------------------------------------------------------------------
+const els = {
+  loginOverlay: document.getElementById("login-overlay"),
+  signupOverlay: document.getElementById("signup-overlay"),
+  btnLogin: document.getElementById("btn-login"),
+  btnSignup: document.getElementById("btn-signup"),
+  btnLogout: document.getElementById("btn-logout"),
+  userEmail: document.getElementById("user-email"),
+  tierBadge: document.getElementById("tier-badge"),
+};
+
+document.querySelectorAll("[data-close]").forEach((el) => {
+  el.addEventListener("click", (e) => {
+    document.getElementById(el.dataset.close).classList.remove("open");
+    if (el.dataset.switch) document.getElementById(el.dataset.switch).classList.add("open");
+  });
+});
+
+els.btnLogin.addEventListener("click", () => els.loginOverlay.classList.add("open"));
+els.btnSignup.addEventListener("click", () => els.signupOverlay.classList.add("open"));
+
+document.getElementById("login-submit").addEventListener("click", async () => {
+  const email = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value;
+  const errorEl = document.getElementById("login-error");
+  errorEl.textContent = "";
+  if (!supabaseClient) { errorEl.textContent = "Supabase no está configurado."; return; }
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) { errorEl.textContent = error.message; return; }
+  els.loginOverlay.classList.remove("open");
+});
+
+document.getElementById("signup-submit").addEventListener("click", async () => {
+  const email = document.getElementById("signup-email").value.trim();
+  const password = document.getElementById("signup-password").value;
+  const errorEl = document.getElementById("signup-error");
+  errorEl.textContent = "";
+  if (!supabaseClient) { errorEl.textContent = "Supabase no está configurado."; return; }
+  const { error } = await supabaseClient.auth.signUp({ email, password });
+  if (error) { errorEl.textContent = error.message; return; }
+  errorEl.style.color = "var(--accent)";
+  errorEl.textContent = "Cuenta creada. Revisa tu email para confirmar (si aplica).";
+});
+
+els.btnLogout.addEventListener("click", async () => {
+  if (supabaseClient) await supabaseClient.auth.signOut();
+});
+
+async function refreshAuthUI() {
+  if (!supabaseClient) return;
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) {
+    els.userEmail.style.display = "inline";
+    els.userEmail.textContent = session.user.email;
+    els.btnLogout.style.display = "inline-block";
+    els.btnLogin.style.display = "none";
+    els.btnSignup.style.display = "none";
+    const tier = session.user.user_metadata?.tier || "free";
+    els.tierBadge.style.display = "inline-block";
+    els.tierBadge.textContent = tier;
+  } else {
+    els.userEmail.style.display = "none";
+    els.btnLogout.style.display = "none";
+    els.btnLogin.style.display = "inline-block";
+    els.btnSignup.style.display = "inline-block";
+    els.tierBadge.style.display = "none";
+  }
+}
+
+if (supabaseClient) {
+  supabaseClient.auth.onAuthStateChange(() => refreshAuthUI());
+  refreshAuthUI();
+}
+
+async function getAuthHeader() {
+  if (!supabaseClient) return {};
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  return session ? { Authorization: `Bearer ${session.access_token}` } : {};
+}
+
+// ---------------------------------------------------------------------
+// Conversión + lógica del "caramelo" (upsell en 402)
+// ---------------------------------------------------------------------
+const statusMsg = document.getElementById("status-msg");
+const convertBtn = document.getElementById("convert-btn");
+const upsellModal = document.getElementById("upsell-modal");
+const upsellMessage = document.getElementById("upsell-message");
+const upsellCta = document.getElementById("upsell-cta");
+const previewWrap = document.getElementById("preview-wrap");
+
+function setStatus(text, kind) {
+  statusMsg.textContent = text || "";
+  statusMsg.className = kind || "";
+}
+
+function closeUpsell() {
+  upsellModal.classList.remove("open");
+  preview.classList.remove("upsell-blur");
+  preview.id = "preview";
+}
+
+convertBtn.addEventListener("click", async () => {
+  setStatus("Convirtiendo…");
+  closeUpsell();
+  preview.removeAttribute("id");
+  preview.id = "preview";
+
+  const formData = new FormData();
+  formData.append("markdown", editor.value || "");
+  formData.append("template", document.getElementById("template-select").value);
+  formData.append("title", document.getElementById("title-input").value);
+  formData.append("author", document.getElementById("author-input").value);
+  formData.append("filename", document.getElementById("filename-input").value || "documento");
+
+  const customTemplateFile = document.getElementById("custom-template-input").files[0];
+  if (customTemplateFile) formData.append("template_file", customTemplateFile);
+
+  try {
+    const headers = await getAuthHeader();
+    const resp = await fetch(`${API_BASE_URL}/api/convert`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+
+    if (resp.status === 402) {
+      const payload = await resp.json();
+      preview.id = "upsell-blur";
+      upsellMessage.textContent = payload.preview_text || payload.message;
+      upsellCta.href = payload.checkout_url || "#";
+      upsellModal.classList.add("open");
+      setStatus("Plantilla personalizada procesada — hazte Pro para descargarla.", "");
+      return;
+    }
+
+    if (resp.status === 429) {
+      const payload = await resp.json().catch(() => ({}));
+      setStatus(payload.detail || "Límite de conversiones gratuitas alcanzado. Vuelve en unos días o hazte Pro.", "error");
+      return;
+    }
+
+    if (resp.status === 403) {
+      const payload = await resp.json().catch(() => ({}));
+      setStatus(payload.detail || "Acceso bloqueado por actividad sospechosa.", "error");
+      return;
+    }
+
+    if (!resp.ok) {
+      const payload = await resp.json().catch(() => ({}));
+      setStatus(payload.detail || payload.error || `Error ${resp.status}`, "error");
+      return;
+    }
+
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${document.getElementById("filename-input").value || "documento"}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    setStatus("Documento descargado ✔", "ok");
+  } catch (err) {
+    setStatus(`Error de red: ${err.message}`, "error");
+  }
+});
+</script>
+</body>
+</html>
