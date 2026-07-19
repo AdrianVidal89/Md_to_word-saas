@@ -138,6 +138,44 @@
     <div id="convert-loading-slot"></div>
   </section>
 
+  <!-- Cómo funciona (3 pasos) -->
+  <section id="howitworks-section" class="max-w-5xl mx-auto px-4 pb-10">
+    <h2 class="text-center text-sm font-bold uppercase tracking-wide text-slate-400 mb-8" data-i18n="howitworks.title">How it works</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <div class="text-center">
+        <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 font-bold flex items-center justify-center mx-auto mb-3">1</div>
+        <h3 class="font-semibold text-slate-900 mb-1" data-i18n="howitworks.step1.title">Paste</h3>
+        <p class="text-sm text-slate-500" data-i18n="howitworks.step1.desc">Drop in the answer your AI gave you — Markdown, plain text, whatever.</p>
+      </div>
+      <div class="text-center">
+        <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 font-bold flex items-center justify-center mx-auto mb-3">2</div>
+        <h3 class="font-semibold text-slate-900 mb-1" data-i18n="howitworks.step2.title">Pick a template</h3>
+        <p class="text-sm text-slate-500" data-i18n="howitworks.step2.desc">Use the clean default, or your own corporate template with Pro.</p>
+      </div>
+      <div class="text-center">
+        <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 font-bold flex items-center justify-center mx-auto mb-3">3</div>
+        <h3 class="font-semibold text-slate-900 mb-1" data-i18n="howitworks.step3.title">Download Word</h3>
+        <p class="text-sm text-slate-500" data-i18n="howitworks.step3.desc">Get a ready-to-send .docx in seconds. No tags, no code.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Espacio Pro (solo usuarios pro/enterprise; sustituye a la promo oculta) -->
+  <section id="pro-toolbox" class="hidden max-w-4xl mx-auto px-4 py-14 border-t border-slate-200">
+    <div class="bg-slate-900 rounded-2xl p-6 md:p-8 text-white">
+      <p class="text-[11px] font-semibold uppercase tracking-wide text-emerald-400 mb-1">PRO</p>
+      <h2 class="text-xl md:text-2xl font-bold mb-1" data-i18n="proToolbox.title">Your Pro space</h2>
+      <p class="text-slate-300 text-sm mb-5" data-i18n="proToolbox.subtitle">Everything you need, one click away — no upsell.</p>
+      <div class="flex flex-wrap gap-3 mb-5">
+        <button id="pro-convert-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-4 py-2 text-sm" data-i18n="proToolbox.convertBtn">Convert with my template</button>
+        <button id="pro-manage-btn" class="border border-slate-600 hover:border-slate-400 text-white font-semibold rounded-lg px-4 py-2 text-sm" data-i18n="proToolbox.manageBtn">Manage my templates</button>
+        <a href="/api-access" class="border border-slate-600 hover:border-slate-400 text-white font-semibold rounded-lg px-4 py-2 text-sm" data-i18n="proToolbox.apiBtn">API access</a>
+      </div>
+      <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2" data-i18n="proToolbox.recentLabel">Your templates</p>
+      <div id="pro-recent" class="flex flex-wrap gap-2"></div>
+    </div>
+  </section>
+
   <!-- Gancho de upgrade -->
   <section id="upgrade-hook-section" class="max-w-6xl mx-auto px-4 py-14 border-t border-slate-200">
     <div class="text-center mb-10">
@@ -197,7 +235,7 @@
   </section>
 
   <!-- Casos de uso -->
-  <section class="max-w-6xl mx-auto px-4 py-14 border-t border-slate-200">
+  <section id="usecases-section" class="max-w-6xl mx-auto px-4 py-14 border-t border-slate-200">
     <h2 class="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-2" data-i18n="usecases.title">Built for professionals in any sector</h2>
     <p class="text-slate-500 text-center max-w-xl mx-auto mb-10" data-i18n="usecases.subtitle">From a student assignment to a technical report at work — if your AI can write it, we can turn it into Word.</p>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -235,23 +273,10 @@
       <button id="prompt-copy-btn" class="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-full px-3 py-1.5" data-i18n="promptDemo.copyBtn">Copy prompt</button>
       <pre id="prompt-lines" class="text-xs md:text-sm leading-relaxed font-mono whitespace-pre-wrap pr-24"></pre>
     </div>
-  </section>
-
-  <!-- API teaser -->
-  <section class="max-w-6xl mx-auto px-4 py-14 border-t border-slate-200">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-      <div>
-        <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2" data-i18n="apiTeaser.title">Ship it inside your own product</h2>
-        <p class="text-slate-500 mb-4" data-i18n="apiTeaser.desc">
-          A machine-to-machine endpoint authenticated with an API key. Drop it into CI/CD pipelines or your own SaaS.
-        </p>
-        <a href="/api-access" class="inline-block bg-slate-900 hover:bg-slate-700 text-white font-semibold rounded-lg px-5 py-2.5 text-sm" data-i18n="apiTeaser.cta">See API docs</a>
-      </div>
-      <pre class="bg-slate-900 text-slate-100 rounded-xl p-4 text-xs overflow-auto"><code>curl -X POST https://api.aitoword.app/api/v1/b2b/convert \
-  -H "X-API-Key: YOUR_API_KEY" \
-  -F "markdown=# Report" \
-  -o report.docx</code></pre>
-    </div>
+    <p id="prompt-note" class="text-xs text-slate-500 mt-3 flex items-start gap-2 max-w-2xl">
+      <span class="text-amber-500 shrink-0" aria-hidden="true">⚑</span>
+      <span id="prompt-note-text"></span>
+    </p>
   </section>
 
   <footer class="border-t border-slate-200">
@@ -314,6 +339,7 @@ wireAuthUI(CONFIG);
 // Prompt de ejemplo: líneas se escalonan al entrar en viewport.
 // ---------------------------------------------------------------------
 const promptLinesEl = document.getElementById("prompt-lines");
+const promptNoteEl = document.getElementById("prompt-note-text");
 
 function renderPromptLines() {
   const lines = t("promptDemo.promptLines");
@@ -325,6 +351,7 @@ function renderPromptLines() {
     span.textContent = line || " ";
     promptLinesEl.appendChild(span);
   });
+  promptNoteEl.textContent = t("promptDemo.note");
 }
 renderPromptLines();
 
@@ -353,14 +380,51 @@ document.getElementById("prompt-copy-btn").addEventListener("click", async (e) =
 });
 
 // ---------------------------------------------------------------------
-// Ocultar el "gancho" de upgrade a quien ya es Pro/Enterprise — ya sabe
-// cómo funciona, no necesita que se lo sigamos vendiendo (ver CLAUDE.md
-// nota de julio: dejar de mostrar los banners explicativos de Pro).
+// A quien ya es Pro/Enterprise no le vendemos Pro: ocultamos el gancho de
+// upgrade ("sube tu plantilla / 1 gratis") y los casos de uso ("público
+// objetivo"), y en su lugar mostramos un panel "Tu espacio Pro" con
+// herramientas útiles (ver ronda de UX de julio, puntos 3/9).
 // ---------------------------------------------------------------------
+async function loadProRecentTemplates() {
+  const box = document.getElementById("pro-recent");
+  box.innerHTML = "";
+  let templates = [];
+  try {
+    const headers = await getAuthHeader();
+    const resp = await fetch(`${CONFIG.API_BASE_URL}/api/pro/templates`, { headers });
+    if (resp.ok) templates = await resp.json();
+  } catch (err) {
+    // best-effort: si falla, dejamos solo los botones de acción.
+  }
+  if (!Array.isArray(templates) || templates.length === 0) {
+    const empty = document.createElement("span");
+    empty.className = "text-slate-400 text-xs";
+    empty.textContent = t("proToolbox.empty");
+    box.appendChild(empty);
+    return;
+  }
+  templates.slice(0, 6).forEach((tpl) => {
+    const chip = document.createElement("button");
+    chip.className = "bg-white/10 hover:bg-white/20 text-white text-xs rounded-full px-3 py-1.5";
+    chip.textContent = tpl.name;
+    chip.addEventListener("click", () => {
+      if (window.openTemplateInStudio) window.openTemplateInStudio(tpl.id, tpl.name);
+      else window.showApp();
+    });
+    box.appendChild(chip);
+  });
+}
+
 document.addEventListener("ai2w:auth", (e) => {
   const isPaid = e.detail.tier === "pro" || e.detail.tier === "enterprise";
   document.getElementById("upgrade-hook-section").classList.toggle("hidden", isPaid);
+  document.getElementById("usecases-section").classList.toggle("hidden", isPaid);
+  document.getElementById("pro-toolbox").classList.toggle("hidden", !isPaid);
+  if (isPaid) loadProRecentTemplates();
 });
+
+document.getElementById("pro-convert-btn").addEventListener("click", () => window.showApp());
+document.getElementById("pro-manage-btn").addEventListener("click", () => window.showApp());
 
 // Warm-up ping (mitiga cold start de Render): no bloquea el uso del hero.
 (function warmup() {
