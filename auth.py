@@ -153,7 +153,12 @@ async def get_current_user_optional(
     profile = _load_or_create_profile(supabase, user_id, payload.get("email"))
     # Registramos la IP y guardamos el nº de IPs distintas en request.state,
     # pero NO bloqueamos aquí: solo el endpoint de conversión lo enforcea.
-    request.state.pro_ip_count = _check_ip_abuse(supabase, profile, get_client_ip(request))
+    # Best-effort: un fallo al escribir last_ips no puede tumbar la identidad
+    # (/api/me debe responder siempre que el JWT sea válido).
+    try:
+        request.state.pro_ip_count = _check_ip_abuse(supabase, profile, get_client_ip(request))
+    except Exception:
+        request.state.pro_ip_count = 0
 
     return AuthenticatedUser(
         id=profile["id"],

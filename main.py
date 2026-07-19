@@ -139,8 +139,13 @@ async def get_templates():
 async def healthz():
     """Warm-up / liveness. El frontend hace ping aquí al cargar la página
     para mitigar el cold start del free tier de Render (spin-down tras
-    inactividad)."""
-    return JSONResponse({"status": "ok"})
+    inactividad). Incluye el commit desplegado (Render inyecta
+    RENDER_GIT_COMMIT) para poder verificar desde el navegador qué versión
+    está realmente en producción."""
+    return JSONResponse({
+        "status": "ok",
+        "commit": os.environ.get("RENDER_GIT_COMMIT", "unknown")[:10],
+    })
 
 
 @app.get("/api/me", response_model=AuthenticatedUser)
