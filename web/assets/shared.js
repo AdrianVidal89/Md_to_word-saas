@@ -1,0 +1,434 @@
+/* Formalize — lógica compartida entre home/pricing/api-access:
+   i18n, sesión de Supabase (con guardas defensivas: un fallo de CDN nunca
+   debe romper el resto de la página), y los modales de login/signup. */
+
+const I18N = {
+  en: {
+    warmup: { message: "Waking up the conversion engine — first request may take a few extra seconds…" },
+    nav: { home: "Home", pricing: "Pricing", api: "API", login: "Log in", signup: "Sign up", logout: "Log out", myTemplates: "My templates" },
+    hero: {
+      eyebrow: "Free forever · No signup · No tags, no JSON",
+      title: "Your Word template. No tags, no JSON, no code. Paste and download.",
+      subtitle: "Paste your Claude or ChatGPT answer below and get a clean, formatted .docx in seconds — free and unlimited, no account needed.",
+      templateLabel: "Template:",
+      templateNone: "Clean default",
+      filenamePlaceholder: "file-name",
+      editorPlaceholder: "# Paste your Markdown here...",
+      editorTab: "Markdown",
+      previewTab: "Preview",
+      downloadBtn: "Download .docx",
+      converting: "Converting…",
+      downloaded: "Document downloaded ✔",
+    },
+    compare: {
+      title: "Good enough to ship. Better with your own brand.",
+      subtitle: "The free output already looks clean. Upload your corporate template once and every future document inherits it automatically.",
+      genericLabel: "GENERIC (free)",
+      customLabel: "WITH YOUR TEMPLATE",
+      proBadge: "PRO",
+      cta: "Upload your template — 1 download free",
+    },
+    usecases: {
+      title: "Built for people who ship documents",
+      case1: { title: "Consultants", desc: "Turn proposals and reports into documents that already look like your firm — no manual reformatting." },
+      case2: { title: "QA & technical reports", desc: "Automatic Pass/Fail cell coloring in every results table, straight from your Markdown." },
+      case3: { title: "Expert witnesses", desc: "Generate signed-ready expert reports with your own letterhead, every time." },
+    },
+    apiTeaser: {
+      title: "Ship it inside your own product",
+      desc: "A machine-to-machine endpoint authenticated with an API key. Drop it into CI/CD pipelines or your own SaaS.",
+      cta: "See API docs",
+    },
+    footer: { tagline: "Formalize — paste Markdown, download Word. No tags, no JSON, no code." },
+    auth: {
+      loginTitle: "Log in", signupTitle: "Create account",
+      emailPlaceholder: "Email", passwordPlaceholder: "Password", passwordPlaceholderMin: "Password (min. 6 characters)",
+      loginSubmit: "Log in", signupSubmit: "Create account",
+      switchToSignup: "No account? Sign up", switchToLogin: "Already have an account? Log in",
+      accountCreated: "Account created. Check your email to confirm (if required).",
+      notConfigured: "Supabase isn't configured yet.",
+    },
+    wizard: {
+      title: "Your corporate template",
+      backToLanding: "← Back to home",
+      myTemplatesTitle: "Your templates",
+      noTemplates: "You haven't uploaded a template yet.",
+      newTemplateBtn: "Upload a new template",
+      useBtn: "Use this template",
+      deleteBtn: "Delete",
+      step1Title: "Step 1 — Upload your .dotx/.docx",
+      step1Desc: "We store it as-is, nothing is modified.",
+      nameLabel: "Template name",
+      uploadBtn: "Upload",
+      chooseFile: "Choose a .docx/.dotx file first.",
+      step2Title: "Step 2 — Style mapping",
+      step2Desc: "We tried to auto-detect your styles. Adjust anything that's wrong or missing — this always has a manual fallback.",
+      mappingHeading1: "Heading 1 style",
+      mappingHeading2: "Heading 2 style",
+      mappingHeading3: "Heading 3 style",
+      mappingTable: "Table style",
+      notDetected: "— not detected, pick one —",
+      saveMappingBtn: "Save mapping & continue",
+      step3Title: "Step 3 — Test conversion",
+      step3Desc: "Paste some Markdown and generate a real .docx with your template.",
+      convertBtn: "Convert with my template",
+      trialNote: "Free plan: your first download with a custom template is free. After that, upgrading to Pro is required.",
+      trialUsedTitle: "You already used your free trial",
+      upgradeMessage: "Upgrade to Pro for unlimited downloads with your own template.",
+      upgradeCta: "Upgrade to Pro",
+      convertedOk: "Document downloaded — this was your free trial download.",
+      convertedOkPro: "Document downloaded ✔",
+    },
+    pricing: {
+      title: "Simple pricing",
+      subtitle: "Start free. Upgrade only when you need your own template.",
+      free: { name: "Free", price: "€0", period: "forever", desc: "The lead magnet — better than the other free converters out there.",
+        f1: "Unlimited conversions", f2: "No signup required", f3: "Clean generic template", f4: "Pass/Fail table coloring",
+        cta: "Start converting" },
+      pro: { name: "Pro", price: "€79", period: "/ year", desc: "For anyone who needs their own corporate template.",
+        f1: "Persistent custom .dotx/.docx template", f2: "Automatic style mapping (with manual fallback)", f3: "Conditional rules (Pass/Fail)", f4: "1 free trial download before you pay",
+        cta: "Upload your template" },
+      api: { name: "API", price: "Pay per use", period: "", desc: "For CI/CD pipelines and product integrations.",
+        f1: "Machine-to-machine endpoint", f2: "Authenticated with an API key", f3: "No per-seat pricing", f4: "Built for automation",
+        cta: "Talk to us" },
+      faqTitle: "Questions",
+      faq1q: "Is the free plan really unlimited?", faq1a: "Yes. It's rate-limited per IP only to stop abuse scripts, never to limit a real person.",
+      faq2q: "What happens after my 1 free Pro download?", faq2a: "You'll see a clear upgrade prompt — never a blurred or fake preview. The first download is always the real, complete file.",
+      faq3q: "Can I cancel anytime?", faq3a: "Yes, Pro is billed yearly with no lock-in beyond the current period.",
+    },
+    api: {
+      title: "Build document generation into your product",
+      subtitle: "A single authenticated endpoint that turns Markdown into a .docx. No SDK required — plain HTTP.",
+      authTitle: "Authentication",
+      authDesc: "Every request needs an X-API-Key header. Keys are issued per account and never stored in plain text on our side.",
+      endpointTitle: "Endpoint",
+      requestTitle: "Example request",
+      responseTitle: "Response",
+      responseDesc: "A binary .docx file (Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document), ready to save or stream to your users.",
+      paramsTitle: "Form fields",
+      paramMarkdown: "the Markdown source (required)",
+      paramTemplate: "catalog template ID, or omit for the clean default",
+      paramTitle: "document title (used if not already in frontmatter)",
+      paramAuthor: "document author (used if not already in frontmatter)",
+      paramFilename: "output filename, without extension",
+      pricingTitle: "Pricing",
+      pricingDesc: "Pay per conversion — no seats, no minimums. See the",
+      pricingLink: "pricing page",
+      ctaTitle: "Want access?",
+      ctaDesc: "Tell us about your use case and we'll set you up with a key.",
+      cta: "Get API access",
+    },
+  },
+  es: {
+    warmup: { message: "Despertando el motor de conversión — la primera petición puede tardar unos segundos más…" },
+    nav: { home: "Inicio", pricing: "Precios", api: "API", login: "Entrar", signup: "Crear cuenta", logout: "Salir", myTemplates: "Mis plantillas" },
+    hero: {
+      eyebrow: "Gratis para siempre · Sin registro · Sin tags, sin JSON",
+      title: "Tu plantilla de Word. Sin tags, sin JSON, sin código. Pega y descarga.",
+      subtitle: "Pega aquí tu respuesta de Claude o ChatGPT y consigue un .docx limpio y formateado en segundos — gratis e ilimitado, sin cuenta.",
+      templateLabel: "Plantilla:",
+      templateNone: "Genérica limpia",
+      filenamePlaceholder: "nombre-fichero",
+      editorPlaceholder: "# Pega aquí tu Markdown...",
+      editorTab: "Markdown",
+      previewTab: "Vista previa",
+      downloadBtn: "Descargar .docx",
+      converting: "Convirtiendo…",
+      downloaded: "Documento descargado ✔",
+    },
+    compare: {
+      title: "Listo para usar tal cual. Mejor con tu propia marca.",
+      subtitle: "El resultado gratuito ya es limpio. Sube tu plantilla corporativa una vez y cada documento futuro la hereda automáticamente.",
+      genericLabel: "GENÉRICO (gratis)",
+      customLabel: "CON TU PLANTILLA",
+      proBadge: "PRO",
+      cta: "Sube tu plantilla — 1 descarga gratis",
+    },
+    usecases: {
+      title: "Pensado para quien entrega documentos",
+      case1: { title: "Consultores", desc: "Convierte propuestas e informes en documentos con el look de tu consultora, sin reformatear a mano." },
+      case2: { title: "QA / informes técnicos", desc: "Coloreado automático Pass/Fail en cada tabla de resultados, directo desde tu Markdown." },
+      case3: { title: "Peritos", desc: "Genera informes periciales con tu membrete corporativo, listos para firmar, cada vez." },
+    },
+    apiTeaser: {
+      title: "Intégralo en tu propio producto",
+      desc: "Un endpoint máquina a máquina autenticado con una API key. Para pipelines de CI/CD o tu propio SaaS.",
+      cta: "Ver documentación de la API",
+    },
+    footer: { tagline: "Formalize — pega Markdown, descarga Word. Sin tags, sin JSON, sin código." },
+    auth: {
+      loginTitle: "Iniciar sesión", signupTitle: "Crear cuenta",
+      emailPlaceholder: "Email", passwordPlaceholder: "Contraseña", passwordPlaceholderMin: "Contraseña (mín. 6 caracteres)",
+      loginSubmit: "Entrar", signupSubmit: "Crear cuenta",
+      switchToSignup: "¿No tienes cuenta? Regístrate", switchToLogin: "¿Ya tienes cuenta? Entra",
+      accountCreated: "Cuenta creada. Revisa tu email para confirmar (si aplica).",
+      notConfigured: "Supabase no está configurado todavía.",
+    },
+    wizard: {
+      title: "Tu plantilla corporativa",
+      backToLanding: "← Volver al inicio",
+      myTemplatesTitle: "Tus plantillas",
+      noTemplates: "Todavía no has subido ninguna plantilla.",
+      newTemplateBtn: "Subir una plantilla nueva",
+      useBtn: "Usar esta plantilla",
+      deleteBtn: "Borrar",
+      step1Title: "Paso 1 — Sube tu .dotx/.docx",
+      step1Desc: "La guardamos tal cual, sin modificarla.",
+      nameLabel: "Nombre de la plantilla",
+      uploadBtn: "Subir",
+      chooseFile: "Elige primero un fichero .docx/.dotx.",
+      step2Title: "Paso 2 — Mapeo de estilos",
+      step2Desc: "Intentamos detectar tus estilos automáticamente. Ajusta lo que falte o esté mal — siempre hay un fallback manual.",
+      mappingHeading1: "Estilo para Heading 1",
+      mappingHeading2: "Estilo para Heading 2",
+      mappingHeading3: "Estilo para Heading 3",
+      mappingTable: "Estilo de tabla",
+      notDetected: "— sin detectar, elige uno —",
+      saveMappingBtn: "Guardar mapeo y continuar",
+      step3Title: "Paso 3 — Conversión de prueba",
+      step3Desc: "Pega algo de Markdown y genera un .docx real con tu plantilla.",
+      convertBtn: "Convertir con mi plantilla",
+      trialNote: "Plan free: tu primera descarga con plantilla propia es gratis. Después, hace falta Pro.",
+      trialUsedTitle: "Ya usaste tu prueba gratuita",
+      upgradeMessage: "Hazte Pro para descargas ilimitadas con tu propia plantilla.",
+      upgradeCta: "Hazte Pro",
+      convertedOk: "Documento descargado — esta era tu descarga de prueba gratuita.",
+      convertedOkPro: "Documento descargado ✔",
+    },
+    pricing: {
+      title: "Precios simples",
+      subtitle: "Empieza gratis. Paga solo cuando necesites tu propia plantilla.",
+      free: { name: "Free", price: "0€", period: "para siempre", desc: "El anzuelo — mejor que el resto de conversores gratuitos.",
+        f1: "Conversiones ilimitadas", f2: "Sin registro", f3: "Plantilla genérica limpia", f4: "Coloreado Pass/Fail en tablas",
+        cta: "Empezar a convertir" },
+      pro: { name: "Pro", price: "79€", period: "/ año", desc: "Para quien necesita su propia plantilla corporativa.",
+        f1: "Plantilla .dotx/.docx propia y persistente", f2: "Auto-mapeo de estilos (con fallback manual)", f3: "Reglas condicionales (Pass/Fail)", f4: "1 descarga de prueba gratis antes de pagar",
+        cta: "Sube tu plantilla" },
+      api: { name: "API", price: "Por uso", period: "", desc: "Para pipelines de CI/CD e integraciones de producto.",
+        f1: "Endpoint máquina a máquina", f2: "Autenticado con API key", f3: "Sin coste por asiento", f4: "Pensado para automatización",
+        cta: "Hablemos" },
+      faqTitle: "Preguntas frecuentes",
+      faq1q: "¿El plan free es de verdad ilimitado?", faq1a: "Sí. Solo tiene un límite por IP para frenar scripts de abuso, nunca para limitar a una persona real.",
+      faq2q: "¿Qué pasa tras mi 1 descarga gratis de Pro?", faq2a: "Verás un aviso claro para hacerte Pro — nunca una preview difuminada o falsa. La primera descarga siempre es el fichero real y completo.",
+      faq3q: "¿Puedo cancelar cuando quiera?", faq3a: "Sí, Pro se factura anualmente sin permanencia más allá del periodo en curso.",
+    },
+    api: {
+      title: "Integra la generación de documentos en tu producto",
+      subtitle: "Un único endpoint autenticado que convierte Markdown en .docx. Sin SDK — HTTP puro.",
+      authTitle: "Autenticación",
+      authDesc: "Cada request necesita un header X-API-Key. Las claves se emiten por cuenta y nunca se guardan en texto plano en nuestro lado.",
+      endpointTitle: "Endpoint",
+      requestTitle: "Ejemplo de request",
+      responseTitle: "Respuesta",
+      responseDesc: "Un fichero .docx binario (Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document), listo para guardar o servir a tus usuarios.",
+      paramsTitle: "Campos del formulario",
+      paramMarkdown: "el Markdown de origen (obligatorio)",
+      paramTemplate: "ID de plantilla del catálogo, u omite para la genérica limpia",
+      paramTitle: "título del documento (si no viene ya en el frontmatter)",
+      paramAuthor: "autor del documento (si no viene ya en el frontmatter)",
+      paramFilename: "nombre del fichero de salida, sin extensión",
+      pricingTitle: "Precio",
+      pricingDesc: "Pago por conversión — sin asientos, sin mínimos. Mira la",
+      pricingLink: "página de precios",
+      ctaTitle: "¿Quieres acceso?",
+      ctaDesc: "Cuéntanos tu caso de uso y te damos una clave.",
+      cta: "Solicitar acceso API",
+    },
+  },
+};
+
+const state = {
+  lang: localStorage.getItem("formalize_lang") || "en",
+  session: null,
+};
+
+function t(key) {
+  const parts = key.split(".");
+  let obj = I18N[state.lang];
+  for (const p of parts) obj = obj?.[p];
+  return obj ?? key;
+}
+
+function applyI18n() {
+  document.documentElement.lang = state.lang;
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  const toggle = document.getElementById("lang-toggle");
+  if (toggle) toggle.textContent = state.lang === "en" ? "ES" : "EN";
+}
+
+function initLangToggle(onChange) {
+  const btn = document.getElementById("lang-toggle");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    state.lang = state.lang === "en" ? "es" : "en";
+    localStorage.setItem("formalize_lang", state.lang);
+    applyI18n();
+    if (onChange) onChange();
+  });
+}
+
+// ---------------------------------------------------------------------
+// Supabase client — nunca debe poder tumbar el resto de la página: si el
+// CDN de supabase-js falla (bloqueador de anuncios, red, CDN caído), el
+// conversor gratuito (que no depende de Supabase para nada) sigue
+// funcionando igual. Login/signup/wizard se degradan solos.
+// ---------------------------------------------------------------------
+let supabaseClient = null;
+
+function initSupabase(config) {
+  try {
+    if (config.SUPABASE_URL && config.SUPABASE_ANON_KEY && typeof supabase !== "undefined") {
+      supabaseClient = supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+    }
+  } catch (err) {
+    console.warn("Supabase client unavailable, continuing without auth:", err);
+  }
+  return supabaseClient;
+}
+
+async function getAuthHeader() {
+  if (!supabaseClient) return {};
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  return session ? { Authorization: `Bearer ${session.access_token}` } : {};
+}
+
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove("hidden");
+  el.classList.add("flex");
+}
+
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add("hidden");
+  el.classList.remove("flex");
+}
+
+/**
+ * Tras login/signup con sesión, el usuario debe aterrizar en "su página"
+ * (el wizard Pro) en vez de quedarse "pillado" en la landing. Si estamos
+ * en home, se abre directo; si no, se navega a home con #app y home lo
+ * detecta al cargar.
+ */
+function goToUserArea() {
+  if (window.location.pathname === "/" && typeof window.showApp === "function") {
+    window.showApp();
+  } else {
+    window.location.href = "/#app";
+  }
+}
+
+async function wireAuthUI(config) {
+  initSupabase(config);
+
+  document.querySelectorAll("[data-close]").forEach((el) => {
+    el.addEventListener("click", () => {
+      closeModal(el.dataset.close);
+      if (el.dataset.switch) openModal(el.dataset.switch);
+    });
+  });
+
+  const btnLogin = document.getElementById("btn-login");
+  const btnSignup = document.getElementById("btn-signup");
+  if (btnLogin) btnLogin.addEventListener("click", () => openModal("login-overlay"));
+  if (btnSignup) btnSignup.addEventListener("click", () => openModal("signup-overlay"));
+
+  const loginSubmit = document.getElementById("login-submit");
+  if (loginSubmit) {
+    loginSubmit.addEventListener("click", async () => {
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value;
+      const errorEl = document.getElementById("login-error");
+      errorEl.textContent = "";
+      if (!supabaseClient) { errorEl.textContent = t("auth.notConfigured"); return; }
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) { errorEl.textContent = error.message; return; }
+      closeModal("login-overlay");
+      if (data.session) goToUserArea();
+    });
+  }
+
+  const signupSubmit = document.getElementById("signup-submit");
+  if (signupSubmit) {
+    signupSubmit.addEventListener("click", async () => {
+      const email = document.getElementById("signup-email").value.trim();
+      const password = document.getElementById("signup-password").value;
+      const errorEl = document.getElementById("signup-error");
+      errorEl.textContent = "";
+      if (!supabaseClient) { errorEl.textContent = t("auth.notConfigured"); return; }
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) { errorEl.textContent = error.message; return; }
+      if (data.session) {
+        closeModal("signup-overlay");
+        goToUserArea();
+        return;
+      }
+      // Sin sesión inmediata: el proyecto exige confirmar el email primero.
+      errorEl.classList.remove("text-red-600");
+      errorEl.classList.add("text-emerald-600");
+      errorEl.textContent = t("auth.accountCreated");
+    });
+  }
+
+  const btnLogout = document.getElementById("btn-logout");
+  if (btnLogout) {
+    btnLogout.addEventListener("click", async () => {
+      if (supabaseClient) await supabaseClient.auth.signOut();
+      if (window.location.pathname !== "/") window.location.href = "/";
+      else if (typeof window.showLanding === "function") window.showLanding();
+      refreshAuthUI(config);
+    });
+  }
+
+  if (supabaseClient) {
+    supabaseClient.auth.onAuthStateChange(() => refreshAuthUI(config));
+    await refreshAuthUI(config);
+  }
+
+  // Tras un redirect entre páginas post-login (ver goToUserArea), #app solo
+  // puede comprobarse una vez la sesión terminó de cargar (arriba), no antes.
+  if (window.location.hash === "#app" && state.session && typeof window.showApp === "function") {
+    window.showApp();
+  }
+}
+
+async function refreshAuthUI(config) {
+  if (!supabaseClient) return;
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  state.session = session;
+  const loggedIn = Boolean(session);
+
+  const userEmail = document.getElementById("user-email");
+  const btnLogout = document.getElementById("btn-logout");
+  const btnApp = document.getElementById("btn-app");
+  const btnLogin = document.getElementById("btn-login");
+  const btnSignup = document.getElementById("btn-signup");
+  const badge = document.getElementById("tier-badge");
+
+  if (userEmail) { userEmail.classList.toggle("hidden", !loggedIn); userEmail.textContent = loggedIn ? session.user.email : ""; }
+  if (btnLogout) btnLogout.classList.toggle("hidden", !loggedIn);
+  if (btnApp) btnApp.classList.toggle("hidden", !loggedIn);
+  if (btnLogin) btnLogin.classList.toggle("hidden", loggedIn);
+  if (btnSignup) btnSignup.classList.toggle("hidden", loggedIn);
+
+  if (!badge) return;
+  if (!loggedIn) { badge.classList.add("hidden"); return; }
+  try {
+    const headers = await getAuthHeader();
+    const resp = await fetch(`${config.API_BASE_URL}/api/me`, { headers });
+    if (resp.ok) {
+      const me = await resp.json();
+      badge.textContent = me.tier;
+      badge.classList.remove("hidden");
+    }
+  } catch (err) {
+    badge.classList.add("hidden");
+  }
+}

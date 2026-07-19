@@ -3,249 +3,246 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>MD2Docx — Paste Markdown, download Word</title>
+<title>Formalize — Paste Markdown, download Word</title>
 <meta name="description" content="Paste your ChatGPT or Claude answer, download a clean .docx instantly. No tags, no JSON, no code — and bring your own corporate Word template." />
+<link rel="canonical" href="__SITE_URL__/" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Formalize — Paste Markdown, download Word" />
+<meta property="og:description" content="Paste your ChatGPT or Claude answer, download a clean .docx instantly. No tags, no JSON, no code." />
+<meta property="og:url" content="__SITE_URL__/" />
+<meta property="og:image" content="__SITE_URL__/assets/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
 <script>
   if (typeof tailwind !== "undefined") {
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              green: '#3dcd58',
-              blue: '#00b0f0',
-            },
-          },
-        },
-      },
-    };
+    tailwind.config = { theme: { extend: { colors: { brand: { DEFAULT: '#059669' } } } } };
   }
 </script>
 <style>
-  #preview :where(td):first-child { border-left: none; }
-  #preview td, #preview th { border: 1px solid rgb(51 65 85); padding: 0.35rem 0.6rem; }
   #preview table { border-collapse: collapse; width: 100%; }
-  .pass-cell { background: #c6efce !important; color: #1a3d1a !important; }
-  .fail-cell { background: #ffc7ce !important; color: #5b1a1a !important; }
+  #preview td, #preview th { border: 1px solid rgb(226 232 240); padding: 0.35rem 0.6rem; }
+  .pass-cell { background: #dcfce7 !important; color: #14532d !important; }
+  .fail-cell { background: #fee2e2 !important; color: #7f1d1d !important; }
 </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen">
+<body class="bg-white text-slate-900 min-h-screen antialiased">
 
-<!-- Warm-up banner (cold start de Render) -->
-<div id="warmup-banner" class="hidden bg-brand-blue/10 text-brand-blue text-xs text-center py-1.5 px-3">
-  <span data-i18n="warmup.message">Waking up the conversion engine — first request may take a few extra seconds…</span>
-</div>
-
-<header class="border-b border-slate-800">
-  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-    <div class="flex items-center gap-1 text-lg font-bold">
-      MD2<span class="text-brand-green">Docx</span>
-    </div>
+<header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
+  <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+    <a href="/" class="flex items-center gap-2 font-bold text-slate-900 text-lg shrink-0">
+      <svg width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <rect x="2" y="2" width="24" height="24" rx="5" fill="#059669"/>
+        <path d="M18 2v6h6" fill="#6ee7b7"/>
+        <rect x="7" y="13" width="12" height="2" rx="1" fill="white"/>
+        <rect x="7" y="17" width="12" height="2" rx="1" fill="white"/>
+        <rect x="7" y="21" width="8" height="2" rx="1" fill="white"/>
+      </svg>
+      Formalize
+    </a>
+    <nav class="hidden md:flex items-center gap-6 text-sm text-slate-600 font-medium">
+      <a href="/" data-i18n="nav.home" class="text-slate-900">Home</a>
+      <a href="/pricing" data-i18n="nav.pricing" class="hover:text-slate-900">Pricing</a>
+      <a href="/api-access" data-i18n="nav.api" class="hover:text-slate-900">API</a>
+    </nav>
     <div class="flex items-center gap-2 text-sm">
-      <a href="#pricing" data-i18n="nav.pricing" class="hidden sm:inline text-slate-300 hover:text-white">Pricing</a>
-      <button id="lang-toggle" class="border border-slate-700 rounded px-2 py-1 text-xs font-semibold text-slate-300 hover:text-white hover:border-slate-500">EN</button>
-      <span id="tier-badge" class="hidden border border-brand-blue text-brand-blue rounded-full px-2 py-0.5 text-[10px] font-bold uppercase"></span>
-      <span id="user-email" class="hidden text-slate-400 text-xs"></span>
-      <button id="btn-app" class="hidden bg-brand-blue text-slate-950 font-semibold rounded px-3 py-1.5 text-xs" data-i18n="nav.myTemplates">My templates</button>
-      <button id="btn-logout" class="hidden border border-slate-700 rounded px-3 py-1.5 text-xs" data-i18n="nav.logout">Log out</button>
-      <button id="btn-login" class="border border-slate-700 rounded px-3 py-1.5 text-xs" data-i18n="nav.login">Log in</button>
-      <button id="btn-signup" class="bg-brand-green text-slate-950 font-semibold rounded px-3 py-1.5 text-xs" data-i18n="nav.signup">Sign up</button>
+      <button id="lang-toggle" class="border border-slate-300 rounded-full px-2.5 py-1 text-xs font-semibold text-slate-600 hover:border-slate-400">EN</button>
+      <span id="tier-badge" class="hidden border border-emerald-300 text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase"></span>
+      <span id="user-email" class="hidden text-slate-500 text-xs max-w-[10rem] truncate"></span>
+      <button id="btn-app" class="hidden bg-slate-900 text-white font-semibold rounded-full px-3.5 py-1.5 text-xs" data-i18n="nav.myTemplates">My templates</button>
+      <button id="btn-logout" class="hidden border border-slate-300 rounded-full px-3.5 py-1.5 text-xs" data-i18n="nav.logout">Log out</button>
+      <button id="btn-login" class="border border-slate-300 rounded-full px-3.5 py-1.5 text-xs" data-i18n="nav.login">Log in</button>
+      <button id="btn-signup" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-full px-3.5 py-1.5 text-xs" data-i18n="nav.signup">Sign up</button>
     </div>
   </div>
 </header>
 
-<!-- ==================== LANDING ==================== -->
+<div id="warmup-banner" class="hidden bg-emerald-50 text-emerald-700 text-xs text-center py-1.5 px-3" data-i18n="warmup.message">
+  Waking up the conversion engine — first request may take a few extra seconds…
+</div>
+
+<!-- ==================== HOME ==================== -->
 <main id="landing-view">
 
-  <!-- HERO: la herramienta misma -->
-  <section class="max-w-6xl mx-auto px-4 pt-6 pb-8">
-    <p class="text-brand-green text-xs font-semibold tracking-wide uppercase mb-2" data-i18n="hero.eyebrow">
+  <section class="max-w-3xl mx-auto px-4 pt-10 md:pt-16 pb-6 text-center">
+    <p class="inline-block text-emerald-700 bg-emerald-50 border border-emerald-200 text-xs font-semibold tracking-wide uppercase px-3 py-1 rounded-full mb-5" data-i18n="hero.eyebrow">
       Free forever · No signup · No tags, no JSON
     </p>
-    <h1 class="text-2xl md:text-4xl font-extrabold leading-tight mb-2" data-i18n="hero.title">
+    <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight text-slate-900 mb-4" data-i18n="hero.title">
       Your Word template. No tags, no JSON, no code. Paste and download.
     </h1>
-    <p class="text-slate-400 text-sm md:text-base mb-4 max-w-2xl" data-i18n="hero.subtitle">
+    <p class="text-slate-500 text-base md:text-lg mb-2" data-i18n="hero.subtitle">
       Paste your Claude or ChatGPT answer below and get a clean, formatted .docx in seconds — free and unlimited, no account needed.
     </p>
+  </section>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <!-- Editor pane: contiene textarea + botón, para que el CTA quede
-           visible sin scroll en mobile (antes que el preview). -->
-      <div class="order-1 flex flex-col gap-2">
-        <div class="flex flex-wrap items-center gap-2 text-xs">
-          <label class="flex items-center gap-1 text-slate-400">
-            <span data-i18n="hero.templateLabel">Template:</span>
-            <select id="template-select" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-100">
-              <option value="none" data-i18n="hero.templateNone">Clean default</option>
-              <!--TEMPLATE_OPTIONS-->
-            </select>
-          </label>
-          <input type="text" id="filename-input" value="documento"
-                 data-i18n-placeholder="hero.filenamePlaceholder"
-                 class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-100 w-28" />
-        </div>
-
-        <textarea id="editor" rows="9"
-          data-i18n-placeholder="hero.editorPlaceholder"
-          class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-mono text-sm text-slate-100 resize-none focus:outline-none focus:border-brand-green"></textarea>
-
+  <section class="max-w-6xl mx-auto px-4 pb-14" id="hero-editor">
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
+        <label class="flex items-center gap-2 text-xs text-slate-600">
+          <span data-i18n="hero.templateLabel">Template:</span>
+          <select id="template-select" class="border border-slate-300 rounded-lg px-2 py-1.5 text-sm bg-white text-slate-800">
+            <option value="none" data-i18n="hero.templateNone">Clean default</option>
+            <!--TEMPLATE_OPTIONS-->
+          </select>
+        </label>
+        <input type="text" id="filename-input" value="documento"
+               data-i18n-placeholder="hero.filenamePlaceholder"
+               class="border border-slate-300 rounded-lg px-2 py-1.5 text-sm w-32 text-slate-800" />
         <button id="convert-btn"
-          class="w-full md:w-auto self-start bg-brand-blue text-slate-950 font-bold rounded-lg px-6 py-3 text-sm hover:brightness-110"
+          class="ml-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-5 py-2 text-sm shadow-sm"
           data-i18n="hero.downloadBtn">
           Download .docx
         </button>
-        <p id="status-msg" class="text-xs min-h-[1rem]"></p>
       </div>
 
-      <!-- Preview pane -->
-      <div class="order-2 flex flex-col gap-2">
-        <p class="text-xs text-slate-500" data-i18n="hero.previewLabel">Live preview (close to the final Word output)</p>
-        <div class="bg-slate-900 border border-slate-700 rounded-lg p-4 overflow-auto max-h-[420px]">
-          <div id="preview" class="prose prose-invert prose-sm max-w-none"></div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
+        <div class="flex flex-col">
+          <div class="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-100" data-i18n="hero.editorTab">Markdown</div>
+          <textarea id="editor" rows="10"
+            data-i18n-placeholder="hero.editorPlaceholder"
+            class="flex-1 w-full p-4 font-mono text-sm text-slate-800 resize-none focus:outline-none h-64 md:h-[420px] lg:h-[480px]"></textarea>
+        </div>
+        <div class="flex flex-col">
+          <div class="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-100" data-i18n="hero.previewTab">Preview</div>
+          <div id="preview-wrap" class="flex-1 overflow-auto h-64 md:h-[420px] lg:h-[480px] p-4">
+            <div id="preview" class="prose prose-slate prose-sm max-w-none"></div>
+          </div>
         </div>
       </div>
     </div>
+    <p id="status-msg" class="text-xs text-slate-500 mt-2 min-h-[1rem]"></p>
   </section>
 
-  <!-- Gancho de upgrade: mockup comparativo genérico vs. plantilla propia -->
-  <section class="max-w-6xl mx-auto px-4 py-10 border-t border-slate-800">
-    <h2 class="text-xl md:text-2xl font-bold text-center mb-2" data-i18n="compare.title">
-      Good enough to ship. Better with your own brand.
-    </h2>
-    <p class="text-slate-400 text-sm text-center max-w-xl mx-auto mb-8" data-i18n="compare.subtitle">
-      The free output already looks clean. Upload your corporate template once and every future document inherits it automatically.
-    </p>
+  <!-- Gancho de upgrade -->
+  <section class="max-w-6xl mx-auto px-4 py-14 border-t border-slate-200">
+    <div class="text-center mb-10">
+      <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2" data-i18n="compare.title">
+        Good enough to ship. Better with your own brand.
+      </h2>
+      <p class="text-slate-500 max-w-xl mx-auto" data-i18n="compare.subtitle">
+        The free output already looks clean. Upload your corporate template once and every future document inherits it automatically.
+      </p>
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-      <div class="border border-slate-700 rounded-lg p-4">
-        <p class="text-xs font-semibold text-slate-400 mb-3" data-i18n="compare.genericLabel">GENERIC (free)</p>
-        <div class="h-3 w-2/3 bg-slate-700 rounded mb-3"></div>
-        <div class="h-2 w-full bg-slate-800 rounded mb-1.5"></div>
-        <div class="h-2 w-full bg-slate-800 rounded mb-1.5"></div>
-        <div class="h-2 w-5/6 bg-slate-800 rounded mb-3"></div>
-        <div class="h-2 w-1/2 bg-slate-700 rounded mb-1.5"></div>
-        <div class="h-2 w-full bg-slate-800 rounded"></div>
+      <div class="border border-slate-200 rounded-2xl p-6 bg-slate-50">
+        <p class="text-xs font-semibold text-slate-400 mb-4" data-i18n="compare.genericLabel">GENERIC (free)</p>
+        <div class="h-3 w-2/3 bg-slate-300 rounded mb-3"></div>
+        <div class="h-2 w-full bg-slate-200 rounded mb-1.5"></div>
+        <div class="h-2 w-full bg-slate-200 rounded mb-1.5"></div>
+        <div class="h-2 w-5/6 bg-slate-200 rounded mb-3"></div>
+        <div class="h-2 w-1/2 bg-slate-300 rounded mb-1.5"></div>
+        <div class="h-2 w-full bg-slate-200 rounded"></div>
       </div>
-      <div class="border-2 border-brand-green rounded-lg p-4 relative">
-        <span class="absolute -top-3 right-3 bg-brand-green text-slate-950 text-[10px] font-bold px-2 py-0.5 rounded-full" data-i18n="compare.proBadge">PRO</span>
-        <p class="text-xs font-semibold text-brand-green mb-3" data-i18n="compare.customLabel">WITH YOUR TEMPLATE</p>
-        <div class="h-3 w-2/3 bg-brand-green/70 rounded mb-3"></div>
-        <div class="h-2 w-full bg-slate-700 rounded mb-1.5"></div>
-        <div class="h-2 w-full bg-slate-700 rounded mb-1.5"></div>
-        <div class="h-2 w-5/6 bg-slate-700 rounded mb-3"></div>
-        <div class="h-2 w-1/2 bg-brand-blue/70 rounded mb-1.5"></div>
-        <div class="h-2 w-full bg-slate-700 rounded"></div>
+      <div class="border-2 border-emerald-500 rounded-2xl p-6 relative bg-white shadow-sm">
+        <span class="absolute -top-3 right-4 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full" data-i18n="compare.proBadge">PRO</span>
+        <p class="text-xs font-semibold text-emerald-600 mb-4" data-i18n="compare.customLabel">WITH YOUR TEMPLATE</p>
+        <div class="h-3 w-2/3 bg-emerald-500 rounded mb-3"></div>
+        <div class="h-2 w-full bg-slate-200 rounded mb-1.5"></div>
+        <div class="h-2 w-full bg-slate-200 rounded mb-1.5"></div>
+        <div class="h-2 w-5/6 bg-slate-200 rounded mb-3"></div>
+        <div class="h-2 w-1/2 bg-sky-500 rounded mb-1.5"></div>
+        <div class="h-2 w-full bg-slate-200 rounded"></div>
       </div>
     </div>
-    <div class="text-center mt-6">
-      <button id="compare-cta" class="bg-brand-green text-slate-950 font-bold rounded-lg px-6 py-2.5 text-sm" data-i18n="compare.cta">
+    <div class="text-center mt-8">
+      <button id="compare-cta" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-6 py-2.5 text-sm shadow-sm" data-i18n="compare.cta">
         Upload your template — 1 download free
       </button>
     </div>
   </section>
 
   <!-- Casos de uso -->
-  <section class="max-w-6xl mx-auto px-4 py-10 border-t border-slate-800">
-    <h2 class="text-xl md:text-2xl font-bold text-center mb-8" data-i18n="usecases.title">Built for people who ship documents</h2>
+  <section class="max-w-6xl mx-auto px-4 py-14 border-t border-slate-200">
+    <h2 class="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-10" data-i18n="usecases.title">Built for people who ship documents</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="border border-slate-800 rounded-lg p-5">
-        <h3 class="font-semibold mb-2" data-i18n="usecases.case1.title">Consultants</h3>
-        <p class="text-sm text-slate-400" data-i18n="usecases.case1.desc">Turn proposals and reports into documents that already look like your firm — no manual reformatting.</p>
+      <div class="border border-slate-200 rounded-2xl p-6">
+        <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></svg>
+        </div>
+        <h3 class="font-semibold text-slate-900 mb-2" data-i18n="usecases.case1.title">Consultants</h3>
+        <p class="text-sm text-slate-500" data-i18n="usecases.case1.desc">Turn proposals and reports into documents that already look like your firm — no manual reformatting.</p>
       </div>
-      <div class="border border-slate-800 rounded-lg p-5">
-        <h3 class="font-semibold mb-2" data-i18n="usecases.case2.title">QA &amp; technical reports</h3>
-        <p class="text-sm text-slate-400" data-i18n="usecases.case2.desc">Automatic Pass/Fail cell coloring in every results table, straight from your Markdown.</p>
+      <div class="border border-slate-200 rounded-2xl p-6">
+        <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <h3 class="font-semibold text-slate-900 mb-2" data-i18n="usecases.case2.title">QA &amp; technical reports</h3>
+        <p class="text-sm text-slate-500" data-i18n="usecases.case2.desc">Automatic Pass/Fail cell coloring in every results table, straight from your Markdown.</p>
       </div>
-      <div class="border border-slate-800 rounded-lg p-5">
-        <h3 class="font-semibold mb-2" data-i18n="usecases.case3.title">Expert witnesses</h3>
-        <p class="text-sm text-slate-400" data-i18n="usecases.case3.desc">Generate signed-ready expert reports with your own letterhead, every time.</p>
+      <div class="border border-slate-200 rounded-2xl p-6">
+        <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M5 7 2 13a3 3 0 0 0 6 0Z"/><path d="M19 7l-3 6a3 3 0 0 0 6 0Z"/></svg>
+        </div>
+        <h3 class="font-semibold text-slate-900 mb-2" data-i18n="usecases.case3.title">Expert witnesses</h3>
+        <p class="text-sm text-slate-500" data-i18n="usecases.case3.desc">Generate signed-ready expert reports with your own letterhead, every time.</p>
       </div>
     </div>
   </section>
 
-  <!-- API B2B -->
-  <section class="max-w-6xl mx-auto px-4 py-10 border-t border-slate-800">
+  <!-- API teaser -->
+  <section class="max-w-6xl mx-auto px-4 py-14 border-t border-slate-200">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
       <div>
-        <h2 class="text-xl md:text-2xl font-bold mb-2" data-i18n="api.title">Ship it inside your own product</h2>
-        <p class="text-slate-400 text-sm mb-4" data-i18n="api.desc">
+        <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2" data-i18n="apiTeaser.title">Ship it inside your own product</h2>
+        <p class="text-slate-500 mb-4" data-i18n="apiTeaser.desc">
           A machine-to-machine endpoint authenticated with an API key. Drop it into CI/CD pipelines or your own SaaS.
         </p>
-        <a href="mailto:hello@md2docx.app" class="inline-block bg-brand-blue text-slate-950 font-semibold rounded-lg px-5 py-2.5 text-sm" data-i18n="api.cta">Get API access</a>
+        <a href="/api-access" class="inline-block bg-slate-900 hover:bg-slate-700 text-white font-semibold rounded-lg px-5 py-2.5 text-sm" data-i18n="apiTeaser.cta">See API docs</a>
       </div>
-      <pre class="bg-slate-900 border border-slate-700 rounded-lg p-4 text-xs overflow-auto"><code>curl -X POST https://api.md2docx.app/api/v1/b2b/convert \
+      <pre class="bg-slate-900 text-slate-100 rounded-xl p-4 text-xs overflow-auto"><code>curl -X POST https://api.formalize.app/api/v1/b2b/convert \
   -H "X-API-Key: YOUR_API_KEY" \
   -F "markdown=# Report" \
   -o report.docx</code></pre>
     </div>
   </section>
 
-  <!-- Pricing -->
-  <section id="pricing" class="max-w-6xl mx-auto px-4 py-10 border-t border-slate-800">
-    <h2 class="text-xl md:text-2xl font-bold text-center mb-8" data-i18n="pricing.title">Pricing</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="border border-slate-800 rounded-lg p-6 flex flex-col">
-        <h3 class="font-semibold" data-i18n="pricing.free.name">Free</h3>
-        <p class="text-3xl font-extrabold my-3" data-i18n="pricing.free.price">€0</p>
-        <p class="text-sm text-slate-400 mb-5 flex-1" data-i18n="pricing.free.desc">Unlimited conversions. No signup. Clean generic template.</p>
-        <a href="#hero" onclick="document.getElementById('editor').focus(); return false;" class="text-center border border-slate-700 rounded-lg px-4 py-2 text-sm font-semibold" data-i18n="pricing.free.cta">Start converting</a>
-      </div>
-      <div class="border-2 border-brand-green rounded-lg p-6 flex flex-col">
-        <h3 class="font-semibold text-brand-green" data-i18n="pricing.pro.name">Pro</h3>
-        <p class="text-3xl font-extrabold my-3" data-i18n="pricing.pro.price">€79 / year</p>
-        <p class="text-sm text-slate-400 mb-5 flex-1" data-i18n="pricing.pro.desc">Your own persistent template, style auto-mapping, conditional rules (Pass/Fail), 1 free trial download.</p>
-        <button id="pricing-pro-cta" class="bg-brand-green text-slate-950 font-bold rounded-lg px-4 py-2 text-sm" data-i18n="pricing.pro.cta">Upload your template</button>
-      </div>
-      <div class="border border-slate-800 rounded-lg p-6 flex flex-col">
-        <h3 class="font-semibold" data-i18n="pricing.api.name">API</h3>
-        <p class="text-3xl font-extrabold my-3" data-i18n="pricing.api.price">Metered</p>
-        <p class="text-sm text-slate-400 mb-5 flex-1" data-i18n="pricing.api.desc">Pay per conversion. Built for CI/CD and product integrations.</p>
-        <a href="mailto:hello@md2docx.app" class="text-center border border-slate-700 rounded-lg px-4 py-2 text-sm font-semibold" data-i18n="pricing.api.cta">Talk to us</a>
+  <footer class="border-t border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 py-10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+      <p data-i18n="footer.tagline">Formalize — paste Markdown, download Word. No tags, no JSON, no code.</p>
+      <div class="flex items-center gap-5">
+        <a href="/pricing" data-i18n="nav.pricing" class="hover:text-slate-900">Pricing</a>
+        <a href="/api-access" data-i18n="nav.api" class="hover:text-slate-900">API</a>
       </div>
     </div>
-  </section>
-
-  <footer class="max-w-6xl mx-auto px-4 py-8 border-t border-slate-800 text-xs text-slate-500 text-center" data-i18n="footer.tagline">
-    MD2Docx — paste Markdown, download Word. No tags, no JSON, no code.
   </footer>
 </main>
 
-<!-- ==================== APP / WIZARD PRO (Fase 4) ==================== -->
-<main id="app-view" class="hidden max-w-3xl mx-auto px-4 py-8"></main>
+<!-- ==================== APP / WIZARD PRO ==================== -->
+<main id="app-view" class="hidden max-w-3xl mx-auto px-4 py-10 min-h-[60vh]"></main>
 
 <!-- Modal de Login -->
-<div id="login-overlay" class="hidden fixed inset-0 bg-black/60 items-center justify-center z-50 px-4">
-  <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-sm">
+<div id="login-overlay" class="hidden fixed inset-0 bg-slate-900/40 items-center justify-center z-50 px-4">
+  <div class="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-sm shadow-xl">
     <div class="flex justify-between items-start mb-3">
-      <h2 class="font-semibold" data-i18n="auth.loginTitle">Log in</h2>
-      <span class="close-x cursor-pointer text-slate-500" data-close="login-overlay">✕</span>
+      <h2 class="font-semibold text-slate-900" data-i18n="auth.loginTitle">Log in</h2>
+      <span class="close-x cursor-pointer text-slate-400" data-close="login-overlay">✕</span>
     </div>
-    <div id="login-error" class="text-red-400 text-xs min-h-[1rem] mb-2"></div>
-    <input type="email" id="login-email" data-i18n-placeholder="auth.emailPlaceholder" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 mb-2 text-sm" />
-    <input type="password" id="login-password" data-i18n-placeholder="auth.passwordPlaceholder" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 mb-3 text-sm" />
-    <button id="login-submit" class="w-full bg-brand-green text-slate-950 font-bold rounded px-3 py-2 text-sm" data-i18n="auth.loginSubmit">Log in</button>
-    <p class="text-xs text-brand-blue mt-3 cursor-pointer switch-link" data-switch="signup-overlay" data-close="login-overlay" data-i18n="auth.switchToSignup">No account? Sign up</p>
+    <div id="login-error" class="text-red-600 text-xs min-h-[1rem] mb-2"></div>
+    <input type="email" id="login-email" data-i18n-placeholder="auth.emailPlaceholder" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2 text-sm" />
+    <input type="password" id="login-password" data-i18n-placeholder="auth.passwordPlaceholder" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-3 text-sm" />
+    <button id="login-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-3 py-2 text-sm" data-i18n="auth.loginSubmit">Log in</button>
+    <p class="text-xs text-emerald-700 mt-3 cursor-pointer switch-link" data-switch="signup-overlay" data-close="login-overlay" data-i18n="auth.switchToSignup">No account? Sign up</p>
   </div>
 </div>
 
 <!-- Modal de Signup -->
-<div id="signup-overlay" class="hidden fixed inset-0 bg-black/60 items-center justify-center z-50 px-4">
-  <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-sm">
+<div id="signup-overlay" class="hidden fixed inset-0 bg-slate-900/40 items-center justify-center z-50 px-4">
+  <div class="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-sm shadow-xl">
     <div class="flex justify-between items-start mb-3">
-      <h2 class="font-semibold" data-i18n="auth.signupTitle">Create account</h2>
-      <span class="close-x cursor-pointer text-slate-500" data-close="signup-overlay">✕</span>
+      <h2 class="font-semibold text-slate-900" data-i18n="auth.signupTitle">Create account</h2>
+      <span class="close-x cursor-pointer text-slate-400" data-close="signup-overlay">✕</span>
     </div>
-    <div id="signup-error" class="text-red-400 text-xs min-h-[1rem] mb-2"></div>
-    <input type="email" id="signup-email" data-i18n-placeholder="auth.emailPlaceholder" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 mb-2 text-sm" />
-    <input type="password" id="signup-password" data-i18n-placeholder="auth.passwordPlaceholderMin" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 mb-3 text-sm" />
-    <button id="signup-submit" class="w-full bg-brand-green text-slate-950 font-bold rounded px-3 py-2 text-sm" data-i18n="auth.signupSubmit">Create account</button>
-    <p class="text-xs text-brand-blue mt-3 cursor-pointer switch-link" data-switch="login-overlay" data-close="signup-overlay" data-i18n="auth.switchToLogin">Already have an account? Log in</p>
+    <div id="signup-error" class="text-red-600 text-xs min-h-[1rem] mb-2"></div>
+    <input type="email" id="signup-email" data-i18n-placeholder="auth.emailPlaceholder" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2 text-sm" />
+    <input type="password" id="signup-password" data-i18n-placeholder="auth.passwordPlaceholderMin" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-3 text-sm" />
+    <button id="signup-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-3 py-2 text-sm" data-i18n="auth.signupSubmit">Create account</button>
+    <p class="text-xs text-emerald-700 mt-3 cursor-pointer switch-link" data-switch="login-overlay" data-close="signup-overlay" data-i18n="auth.switchToLogin">Already have an account? Log in</p>
   </div>
 </div>
 
+<script src="/assets/shared.js"></script>
 <script>
 const CONFIG = {
   SUPABASE_URL: "__SUPABASE_URL__",
@@ -253,208 +250,11 @@ const CONFIG = {
   API_BASE_URL: "__API_BASE_URL__" || "",
 };
 
-const I18N = {
-  en: {
-    warmup: { message: "Waking up the conversion engine — first request may take a few extra seconds…" },
-    nav: { pricing: "Pricing", login: "Log in", signup: "Sign up", logout: "Log out", myTemplates: "My templates" },
-    hero: {
-      eyebrow: "Free forever · No signup · No tags, no JSON",
-      title: "Your Word template. No tags, no JSON, no code. Paste and download.",
-      subtitle: "Paste your Claude or ChatGPT answer below and get a clean, formatted .docx in seconds — free and unlimited, no account needed.",
-      templateLabel: "Template:",
-      templateNone: "Clean default",
-      filenamePlaceholder: "file-name",
-      editorPlaceholder: "# Paste your Markdown here...",
-      downloadBtn: "Download .docx",
-      converting: "Converting…",
-      downloaded: "Document downloaded ✔",
-      previewLabel: "Live preview (close to the final Word output)",
-    },
-    compare: {
-      title: "Good enough to ship. Better with your own brand.",
-      subtitle: "The free output already looks clean. Upload your corporate template once and every future document inherits it automatically.",
-      genericLabel: "GENERIC (free)",
-      customLabel: "WITH YOUR TEMPLATE",
-      proBadge: "PRO",
-      cta: "Upload your template — 1 download free",
-    },
-    usecases: {
-      title: "Built for people who ship documents",
-      case1: { title: "Consultants", desc: "Turn proposals and reports into documents that already look like your firm — no manual reformatting." },
-      case2: { title: "QA & technical reports", desc: "Automatic Pass/Fail cell coloring in every results table, straight from your Markdown." },
-      case3: { title: "Expert witnesses", desc: "Generate signed-ready expert reports with your own letterhead, every time." },
-    },
-    api: {
-      title: "Ship it inside your own product",
-      desc: "A machine-to-machine endpoint authenticated with an API key. Drop it into CI/CD pipelines or your own SaaS.",
-      cta: "Get API access",
-    },
-    pricing: {
-      title: "Pricing",
-      free: { name: "Free", price: "€0", desc: "Unlimited conversions. No signup. Clean generic template.", cta: "Start converting" },
-      pro: { name: "Pro", price: "€79 / year", desc: "Your own persistent template, style auto-mapping, conditional rules (Pass/Fail), 1 free trial download.", cta: "Upload your template" },
-      api: { name: "API", price: "Metered", desc: "Pay per conversion. Built for CI/CD and product integrations.", cta: "Talk to us" },
-    },
-    footer: { tagline: "MD2Docx — paste Markdown, download Word. No tags, no JSON, no code." },
-    auth: {
-      loginTitle: "Log in", signupTitle: "Create account",
-      emailPlaceholder: "Email", passwordPlaceholder: "Password", passwordPlaceholderMin: "Password (min. 6 characters)",
-      loginSubmit: "Log in", signupSubmit: "Create account",
-      switchToSignup: "No account? Sign up", switchToLogin: "Already have an account? Log in",
-      accountCreated: "Account created. Check your email to confirm (if required).",
-      notConfigured: "Supabase isn't configured yet.",
-    },
-    wizard: {
-      title: "Your corporate template",
-      backToLanding: "← Back to home",
-      myTemplatesTitle: "Your templates",
-      noTemplates: "You haven't uploaded a template yet.",
-      newTemplateBtn: "Upload a new template",
-      useBtn: "Use this template",
-      deleteBtn: "Delete",
-      step1Title: "Step 1 — Upload your .dotx/.docx",
-      step1Desc: "We store it as-is, nothing is modified.",
-      nameLabel: "Template name",
-      uploadBtn: "Upload",
-      chooseFile: "Choose a .docx/.dotx file first.",
-      step2Title: "Step 2 — Style mapping",
-      step2Desc: "We tried to auto-detect your styles. Adjust anything that's wrong or missing — this always has a manual fallback.",
-      mappingHeading1: "Heading 1 style",
-      mappingHeading2: "Heading 2 style",
-      mappingHeading3: "Heading 3 style",
-      mappingTable: "Table style",
-      notDetected: "— not detected, pick one —",
-      saveMappingBtn: "Save mapping & continue",
-      step3Title: "Step 3 — Test conversion",
-      step3Desc: "Paste some Markdown and generate a real .docx with your template.",
-      convertBtn: "Convert with my template",
-      trialNote: "Free plan: your first download with a custom template is free. After that, upgrading to Pro is required.",
-      trialUsedTitle: "You already used your free trial",
-      upgradeMessage: "Upgrade to Pro for unlimited downloads with your own template.",
-      upgradeCta: "Upgrade to Pro",
-      convertedOk: "Document downloaded — this was your free trial download.",
-      convertedOkPro: "Document downloaded ✔",
-    },
-  },
-  es: {
-    warmup: { message: "Despertando el motor de conversión — la primera petición puede tardar unos segundos más…" },
-    nav: { pricing: "Precios", login: "Entrar", signup: "Crear cuenta", logout: "Salir", myTemplates: "Mis plantillas" },
-    hero: {
-      eyebrow: "Gratis para siempre · Sin registro · Sin tags, sin JSON",
-      title: "Tu plantilla de Word. Sin tags, sin JSON, sin código. Pega y descarga.",
-      subtitle: "Pega aquí tu respuesta de Claude o ChatGPT y consigue un .docx limpio y formateado en segundos — gratis e ilimitado, sin cuenta.",
-      templateLabel: "Plantilla:",
-      templateNone: "Genérica limpia",
-      filenamePlaceholder: "nombre-fichero",
-      editorPlaceholder: "# Pega aquí tu Markdown...",
-      downloadBtn: "Descargar .docx",
-      converting: "Convirtiendo…",
-      downloaded: "Documento descargado ✔",
-      previewLabel: "Vista previa en vivo (aproximada al resultado en Word)",
-    },
-    compare: {
-      title: "Listo para usar tal cual. Mejor con tu propia marca.",
-      subtitle: "El resultado gratuito ya es limpio. Sube tu plantilla corporativa una vez y cada documento futuro la hereda automáticamente.",
-      genericLabel: "GENÉRICO (gratis)",
-      customLabel: "CON TU PLANTILLA",
-      proBadge: "PRO",
-      cta: "Sube tu plantilla — 1 descarga gratis",
-    },
-    usecases: {
-      title: "Pensado para quien entrega documentos",
-      case1: { title: "Consultores", desc: "Convierte propuestas e informes en documentos con el look de tu consultora, sin reformatear a mano." },
-      case2: { title: "QA / informes técnicos", desc: "Coloreado automático Pass/Fail en cada tabla de resultados, directo desde tu Markdown." },
-      case3: { title: "Peritos", desc: "Genera informes periciales con tu membrete corporativo, listos para firmar, cada vez." },
-    },
-    api: {
-      title: "Intégralo en tu propio producto",
-      desc: "Un endpoint máquina a máquina autenticado con una API key. Para pipelines de CI/CD o tu propio SaaS.",
-      cta: "Solicitar acceso API",
-    },
-    pricing: {
-      title: "Precios",
-      free: { name: "Free", price: "0€", desc: "Conversiones ilimitadas. Sin registro. Plantilla genérica limpia.", cta: "Empezar a convertir" },
-      pro: { name: "Pro", price: "79€ / año", desc: "Tu propia plantilla persistente, auto-mapeo de estilos, reglas condicionales (Pass/Fail), 1 descarga de prueba gratis.", cta: "Sube tu plantilla" },
-      api: { name: "API", price: "Por uso", desc: "Pago por conversión. Pensado para CI/CD e integraciones de producto.", cta: "Hablemos" },
-    },
-    footer: { tagline: "MD2Docx — pega Markdown, descarga Word. Sin tags, sin JSON, sin código." },
-    auth: {
-      loginTitle: "Iniciar sesión", signupTitle: "Crear cuenta",
-      emailPlaceholder: "Email", passwordPlaceholder: "Contraseña", passwordPlaceholderMin: "Contraseña (mín. 6 caracteres)",
-      loginSubmit: "Entrar", signupSubmit: "Crear cuenta",
-      switchToSignup: "¿No tienes cuenta? Regístrate", switchToLogin: "¿Ya tienes cuenta? Entra",
-      accountCreated: "Cuenta creada. Revisa tu email para confirmar (si aplica).",
-      notConfigured: "Supabase no está configurado todavía.",
-    },
-    wizard: {
-      title: "Tu plantilla corporativa",
-      backToLanding: "← Volver al inicio",
-      myTemplatesTitle: "Tus plantillas",
-      noTemplates: "Todavía no has subido ninguna plantilla.",
-      newTemplateBtn: "Subir una plantilla nueva",
-      useBtn: "Usar esta plantilla",
-      deleteBtn: "Borrar",
-      step1Title: "Paso 1 — Sube tu .dotx/.docx",
-      step1Desc: "La guardamos tal cual, sin modificarla.",
-      nameLabel: "Nombre de la plantilla",
-      uploadBtn: "Subir",
-      chooseFile: "Elige primero un fichero .docx/.dotx.",
-      step2Title: "Paso 2 — Mapeo de estilos",
-      step2Desc: "Intentamos detectar tus estilos automáticamente. Ajusta lo que falte o esté mal — siempre hay un fallback manual.",
-      mappingHeading1: "Estilo para Heading 1",
-      mappingHeading2: "Estilo para Heading 2",
-      mappingHeading3: "Estilo para Heading 3",
-      mappingTable: "Estilo de tabla",
-      notDetected: "— sin detectar, elige uno —",
-      saveMappingBtn: "Guardar mapeo y continuar",
-      step3Title: "Paso 3 — Conversión de prueba",
-      step3Desc: "Pega algo de Markdown y genera un .docx real con tu plantilla.",
-      convertBtn: "Convertir con mi plantilla",
-      trialNote: "Plan free: tu primera descarga con plantilla propia es gratis. Después, hace falta Pro.",
-      trialUsedTitle: "Ya usaste tu prueba gratuita",
-      upgradeMessage: "Hazte Pro para descargas ilimitadas con tu propia plantilla.",
-      upgradeCta: "Hazte Pro",
-      convertedOk: "Documento descargado — esta era tu descarga de prueba gratuita.",
-      convertedOkPro: "Documento descargado ✔",
-    },
-  },
-};
-
-const state = {
-  lang: localStorage.getItem("md2docx_lang") || "en",
-  session: null,
-};
-
-function t(key) {
-  const parts = key.split(".");
-  let obj = I18N[state.lang];
-  for (const p of parts) obj = obj?.[p];
-  return obj ?? key;
-}
-
-function applyI18n() {
-  document.documentElement.lang = state.lang;
-  document.querySelectorAll("[data-i18n]").forEach((el) => {
-    el.textContent = t(el.dataset.i18n);
-  });
-  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
-    el.placeholder = t(el.dataset.i18nPlaceholder);
-  });
-  document.getElementById("lang-toggle").textContent = state.lang === "en" ? "ES" : "EN";
-}
-
-document.getElementById("lang-toggle").addEventListener("click", () => {
-  state.lang = state.lang === "en" ? "es" : "en";
-  localStorage.setItem("md2docx_lang", state.lang);
-  applyI18n();
-  renderPreview();
-});
-
 applyI18n();
+initLangToggle(renderPreview);
+wireAuthUI(CONFIG);
 
-// ---------------------------------------------------------------------
 // Warm-up ping (mitiga cold start de Render): no bloquea el uso del hero.
-// ---------------------------------------------------------------------
 (function warmup() {
   const banner = document.getElementById("warmup-banner");
   const timer = setTimeout(() => banner.classList.remove("hidden"), 800);
@@ -465,27 +265,6 @@ applyI18n();
       banner.classList.add("hidden");
     });
 })();
-
-// ---------------------------------------------------------------------
-// Supabase client — nunca debe poder tumbar el resto del script: si el CDN
-// de supabase-js falla (bloqueador de anuncios, red, CDN caído), el
-// conversor gratuito (que no depende de Supabase para nada) tiene que
-// seguir funcionando igual. Login/signup/wizard Pro se degradan solos.
-// ---------------------------------------------------------------------
-let supabaseClient = null;
-try {
-  if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && typeof supabase !== "undefined") {
-    supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
-  }
-} catch (err) {
-  console.warn("Supabase client unavailable, continuing without auth:", err);
-}
-
-async function getAuthHeader() {
-  if (!supabaseClient) return {};
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  return session ? { Authorization: `Bearer ${session.access_token}` } : {};
-}
 
 // ---------------------------------------------------------------------
 // Editor + preview
@@ -513,8 +292,6 @@ function colorizePassFail(root) {
 function renderPreview() {
   const raw = stripFrontmatter(editor.value || "");
   if (typeof marked === "undefined") {
-    // El CDN de marked.js no cargó: degradar a texto plano en vez de
-    // romper el preview (la conversión real en el servidor no depende de esto).
     preview.textContent = raw;
     return;
   }
@@ -537,116 +314,28 @@ editor.addEventListener("drop", (e) => {
 });
 renderPreview();
 
-// ---------------------------------------------------------------------
-// Auth: modales + estado de sesión
-// ---------------------------------------------------------------------
-document.querySelectorAll("[data-close]").forEach((el) => {
-  el.addEventListener("click", () => {
-    document.getElementById(el.dataset.close).classList.add("hidden");
-    document.getElementById(el.dataset.close).classList.remove("flex");
-    if (el.dataset.switch) {
-      document.getElementById(el.dataset.switch).classList.remove("hidden");
-      document.getElementById(el.dataset.switch).classList.add("flex");
-    }
-  });
-});
-
-function openModal(id) {
-  const el = document.getElementById(id);
-  el.classList.remove("hidden");
-  el.classList.add("flex");
-}
-
-document.getElementById("btn-login").addEventListener("click", () => openModal("login-overlay"));
-document.getElementById("btn-signup").addEventListener("click", () => openModal("signup-overlay"));
 document.getElementById("compare-cta").addEventListener("click", () => {
   if (state.session) { showApp(); } else { openModal("signup-overlay"); }
 });
-document.getElementById("pricing-pro-cta").addEventListener("click", () => {
-  if (state.session) { showApp(); } else { openModal("signup-overlay"); }
-});
-
-document.getElementById("login-submit").addEventListener("click", async () => {
-  const email = document.getElementById("login-email").value.trim();
-  const password = document.getElementById("login-password").value;
-  const errorEl = document.getElementById("login-error");
-  errorEl.textContent = "";
-  if (!supabaseClient) { errorEl.textContent = t("auth.notConfigured"); return; }
-  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) { errorEl.textContent = error.message; return; }
-  document.getElementById("login-overlay").classList.add("hidden");
-  document.getElementById("login-overlay").classList.remove("flex");
-});
-
-document.getElementById("signup-submit").addEventListener("click", async () => {
-  const email = document.getElementById("signup-email").value.trim();
-  const password = document.getElementById("signup-password").value;
-  const errorEl = document.getElementById("signup-error");
-  errorEl.textContent = "";
-  if (!supabaseClient) { errorEl.textContent = t("auth.notConfigured"); return; }
-  const { error } = await supabaseClient.auth.signUp({ email, password });
-  if (error) { errorEl.textContent = error.message; return; }
-  errorEl.classList.remove("text-red-400");
-  errorEl.classList.add("text-brand-green");
-  errorEl.textContent = t("auth.accountCreated");
-});
-
-document.getElementById("btn-logout").addEventListener("click", async () => {
-  if (supabaseClient) await supabaseClient.auth.signOut();
-  showLanding();
-});
-
-async function refreshAuthUI() {
-  if (!supabaseClient) return;
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  state.session = session;
-  const loggedIn = Boolean(session);
-  document.getElementById("user-email").classList.toggle("hidden", !loggedIn);
-  document.getElementById("user-email").textContent = loggedIn ? session.user.email : "";
-  document.getElementById("btn-logout").classList.toggle("hidden", !loggedIn);
-  document.getElementById("btn-app").classList.toggle("hidden", !loggedIn);
-  document.getElementById("btn-login").classList.toggle("hidden", loggedIn);
-  document.getElementById("btn-signup").classList.toggle("hidden", loggedIn);
-
-  const badge = document.getElementById("tier-badge");
-  if (!loggedIn) {
-    badge.classList.add("hidden");
-    return;
-  }
-  // El tier real vive en public.users.tier (backend), no en el JWT.
-  try {
-    const headers = await getAuthHeader();
-    const resp = await fetch(`${CONFIG.API_BASE_URL}/api/me`, { headers });
-    if (resp.ok) {
-      const me = await resp.json();
-      badge.textContent = me.tier;
-      badge.classList.remove("hidden");
-    }
-  } catch (err) {
-    badge.classList.add("hidden");
-  }
-}
-
-if (supabaseClient) {
-  supabaseClient.auth.onAuthStateChange(() => refreshAuthUI());
-  refreshAuthUI();
-}
 
 // ---------------------------------------------------------------------
-// Vista landing <-> app (Pro dashboard, ver wizard en app.js embebido)
+// Vista landing <-> app (Pro dashboard, wizard.js)
 // ---------------------------------------------------------------------
-function showLanding() {
+window.showLanding = function showLanding() {
   document.getElementById("landing-view").classList.remove("hidden");
   document.getElementById("app-view").classList.add("hidden");
-}
+};
 
-function showApp() {
+window.showApp = function showApp() {
   document.getElementById("landing-view").classList.add("hidden");
   document.getElementById("app-view").classList.remove("hidden");
   if (window.renderWizard) window.renderWizard();
-}
+};
 
 document.getElementById("btn-app").addEventListener("click", showApp);
+
+// El check de "#app" tras un redirect post-login vive en wireAuthUI
+// (shared.js) — ahí es donde se conoce con certeza que la sesión ya cargó.
 
 // ---------------------------------------------------------------------
 // Conversión genérica (pública, sin login, sin límite de negocio)
@@ -656,7 +345,7 @@ const convertBtn = document.getElementById("convert-btn");
 
 function setStatus(text, kind) {
   statusMsg.textContent = text || "";
-  statusMsg.className = "text-xs min-h-[1rem] " + (kind === "error" ? "text-red-400" : kind === "ok" ? "text-brand-green" : "text-slate-400");
+  statusMsg.className = "text-xs mt-2 min-h-[1rem] " + (kind === "error" ? "text-red-600" : kind === "ok" ? "text-emerald-600" : "text-slate-500");
 }
 
 convertBtn.addEventListener("click", async () => {
@@ -695,265 +384,6 @@ convertBtn.addEventListener("click", async () => {
   }
 });
 </script>
-
-<script>
-// ------------------------------------------------------------------
-// Pro wizard (Fase 4): subir -> mapear estilos -> conversión de prueba.
-// Contra los endpoints de pro_templates.py (ver CLAUDE.md §5.2). Un
-// usuario 'free' tiene derecho a 1 descarga real de prueba (paso 3) antes
-// de que el backend empiece a devolver 402 — se refleja tal cual, sin
-// difuminar ni fingir que el documento "está listo" cuando no lo está.
-// ------------------------------------------------------------------
-const PRO_API = `${CONFIG.API_BASE_URL}/api/pro/templates`;
-const MAPPING_SLOTS = ["heading_1", "heading_2", "heading_3", "table"];
-
-const wizard = {
-  templates: [],
-  view: "list", // list | step1 | step2 | step3
-  currentId: null,
-  currentName: "",
-  availableStyles: [],
-  mapping: {},
-};
-
-function el(tag, className, text) {
-  const e = document.createElement(tag);
-  if (className) e.className = className;
-  if (text !== undefined) e.textContent = text;
-  return e;
-}
-
-async function fetchMyTemplates() {
-  const headers = await getAuthHeader();
-  const resp = await fetch(PRO_API, { headers });
-  if (!resp.ok) return [];
-  return resp.json();
-}
-
-window.renderWizard = async function renderWizard() {
-  wizard.templates = await fetchMyTemplates();
-  wizard.view = "list";
-  paintWizard();
-};
-
-function paintWizard() {
-  const root = document.getElementById("app-view");
-  root.innerHTML = "";
-
-  const back = el("button", "text-sm text-slate-400 mb-4", t("wizard.backToLanding"));
-  back.addEventListener("click", showLanding);
-  root.appendChild(back);
-
-  root.appendChild(el("h1", "text-xl font-bold mb-6", t("wizard.title")));
-
-  if (wizard.view === "list") paintList(root);
-  else if (wizard.view === "step1") paintStep1(root);
-  else if (wizard.view === "step2") paintStep2(root);
-  else if (wizard.view === "step3") paintStep3(root);
-}
-
-function paintList(root) {
-  root.appendChild(el("h2", "font-semibold mb-3", t("wizard.myTemplatesTitle")));
-
-  if (wizard.templates.length === 0) {
-    root.appendChild(el("p", "text-sm text-slate-400 mb-4", t("wizard.noTemplates")));
-  } else {
-    const list = el("div", "flex flex-col gap-2 mb-4");
-    wizard.templates.forEach((tpl) => {
-      const row = el("div", "flex items-center justify-between border border-slate-800 rounded-lg px-4 py-3");
-      row.appendChild(el("span", "text-sm", tpl.name));
-      const actions = el("div", "flex gap-2");
-
-      const useBtn = el("button", "text-xs bg-brand-blue text-slate-950 font-semibold rounded px-3 py-1.5", t("wizard.useBtn"));
-      useBtn.addEventListener("click", () => {
-        wizard.currentId = tpl.id;
-        wizard.currentName = tpl.name;
-        wizard.view = "step3";
-        paintWizard();
-      });
-
-      const delBtn = el("button", "text-xs border border-slate-700 rounded px-3 py-1.5", t("wizard.deleteBtn"));
-      delBtn.addEventListener("click", async () => {
-        const headers = await getAuthHeader();
-        await fetch(`${PRO_API}/${tpl.id}`, { method: "DELETE", headers });
-        renderWizard();
-      });
-
-      actions.append(useBtn, delBtn);
-      row.appendChild(actions);
-      list.appendChild(row);
-    });
-    root.appendChild(list);
-  }
-
-  const newBtn = el("button", "bg-brand-green text-slate-950 font-bold rounded-lg px-4 py-2 text-sm", t("wizard.newTemplateBtn"));
-  newBtn.addEventListener("click", () => { wizard.view = "step1"; paintWizard(); });
-  root.appendChild(newBtn);
-}
-
-function paintStep1(root) {
-  root.appendChild(el("h2", "font-semibold mb-1", t("wizard.step1Title")));
-  root.appendChild(el("p", "text-sm text-slate-400 mb-4", t("wizard.step1Desc")));
-
-  const nameLabel = el("label", "text-xs text-slate-400 block mb-1", t("wizard.nameLabel"));
-  const nameInput = el("input", "w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 mb-4 text-sm");
-  nameInput.type = "text";
-
-  const fileInput = el("input", "block w-full text-sm mb-4");
-  fileInput.type = "file";
-  fileInput.accept = ".docx,.dotx";
-
-  const errorEl = el("p", "text-red-400 text-xs mb-2 min-h-[1rem]");
-
-  const uploadBtn = el("button", "bg-brand-green text-slate-950 font-bold rounded-lg px-4 py-2 text-sm", t("wizard.uploadBtn"));
-  uploadBtn.addEventListener("click", async () => {
-    errorEl.textContent = "";
-    const file = fileInput.files[0];
-    if (!file) { errorEl.textContent = t("wizard.chooseFile"); return; }
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("name", nameInput.value || file.name);
-    const headers = await getAuthHeader();
-    const resp = await fetch(PRO_API, { method: "POST", headers, body: formData });
-    if (!resp.ok) {
-      const payload = await resp.json().catch(() => ({}));
-      errorEl.textContent = payload.detail || `Error ${resp.status}`;
-      return;
-    }
-    const data = await resp.json();
-    wizard.currentId = data.id;
-    wizard.currentName = data.name;
-    wizard.availableStyles = data.available_styles;
-    wizard.mapping = { ...data.detected_mapping };
-    wizard.view = "step2";
-    paintWizard();
-  });
-
-  root.append(nameLabel, nameInput, fileInput, errorEl, uploadBtn);
-}
-
-function paintStep2(root) {
-  root.appendChild(el("h2", "font-semibold mb-1", t("wizard.step2Title")));
-  root.appendChild(el("p", "text-sm text-slate-400 mb-4", t("wizard.step2Desc")));
-
-  const labels = {
-    heading_1: t("wizard.mappingHeading1"),
-    heading_2: t("wizard.mappingHeading2"),
-    heading_3: t("wizard.mappingHeading3"),
-    table: t("wizard.mappingTable"),
-  };
-
-  const selects = {};
-  MAPPING_SLOTS.forEach((slot) => {
-    const wrap = el("div", "mb-3");
-    wrap.appendChild(el("label", "text-xs text-slate-400 block mb-1", labels[slot]));
-
-    const select = document.createElement("select");
-    select.className = "w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm";
-
-    const emptyOpt = document.createElement("option");
-    emptyOpt.value = "";
-    emptyOpt.textContent = t("wizard.notDetected");
-    select.appendChild(emptyOpt);
-
-    wizard.availableStyles.forEach((styleName) => {
-      const opt = document.createElement("option");
-      opt.value = styleName;
-      opt.textContent = styleName;
-      if (wizard.mapping[slot] === styleName) opt.selected = true;
-      select.appendChild(opt);
-    });
-
-    selects[slot] = select;
-    wrap.appendChild(select);
-    root.appendChild(wrap);
-  });
-
-  const errorEl = el("p", "text-red-400 text-xs mb-2 min-h-[1rem]");
-  const saveBtn = el("button", "bg-brand-green text-slate-950 font-bold rounded-lg px-4 py-2 text-sm", t("wizard.saveMappingBtn"));
-  saveBtn.addEventListener("click", async () => {
-    errorEl.textContent = "";
-    const mapping = {};
-    MAPPING_SLOTS.forEach((slot) => { mapping[slot] = selects[slot].value || null; });
-
-    const headers = await getAuthHeader();
-    const resp = await fetch(`${PRO_API}/${wizard.currentId}/mapping`, {
-      method: "PUT",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify(mapping),
-    });
-    if (!resp.ok) {
-      const payload = await resp.json().catch(() => ({}));
-      errorEl.textContent = payload.detail || `Error ${resp.status}`;
-      return;
-    }
-    wizard.mapping = mapping;
-    wizard.view = "step3";
-    paintWizard();
-  });
-
-  root.append(errorEl, saveBtn);
-}
-
-function paintStep3(root) {
-  root.appendChild(el("h2", "font-semibold mb-1", `${t("wizard.step3Title")} — ${wizard.currentName}`));
-  root.appendChild(el("p", "text-sm text-slate-400 mb-1", t("wizard.step3Desc")));
-  root.appendChild(el("p", "text-xs text-slate-500 mb-4", t("wizard.trialNote")));
-
-  const textarea = document.createElement("textarea");
-  textarea.className = "w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-mono text-sm mb-4";
-  textarea.rows = 8;
-  textarea.value = "# Sample document\n\nThis is a paragraph.\n\n| Test | Result |\n|---|---|\n| A | PASS |\n";
-
-  const resultEl = el("div", "text-sm mb-3 min-h-[1.5rem]");
-
-  const convertBtn2 = el("button", "bg-brand-blue text-slate-950 font-bold rounded-lg px-4 py-2 text-sm", t("wizard.convertBtn"));
-  convertBtn2.addEventListener("click", async () => {
-    resultEl.className = "text-sm mb-3 min-h-[1.5rem] text-slate-400";
-    resultEl.textContent = t("hero.converting");
-
-    const formData = new FormData();
-    formData.append("markdown", textarea.value || "");
-    formData.append("filename", wizard.currentName || "documento");
-    const headers = await getAuthHeader();
-    const resp = await fetch(`${PRO_API}/${wizard.currentId}/convert`, { method: "POST", headers, body: formData });
-
-    if (resp.status === 402) {
-      const payload = await resp.json().catch(() => ({}));
-      resultEl.className = "text-sm mb-3 min-h-[1.5rem]";
-      resultEl.innerHTML = "";
-      resultEl.appendChild(el("p", "text-amber-400 font-semibold mb-1", t("wizard.trialUsedTitle")));
-      resultEl.appendChild(el("p", "text-slate-400 text-xs mb-2", payload.detail || t("wizard.upgradeMessage")));
-      const cta = el("a", "inline-block bg-brand-green text-slate-950 font-bold rounded px-4 py-2 text-xs", t("wizard.upgradeCta"));
-      cta.href = "mailto:hello@md2docx.app";
-      resultEl.appendChild(cta);
-      return;
-    }
-    if (!resp.ok) {
-      const payload = await resp.json().catch(() => ({}));
-      resultEl.className = "text-sm mb-3 min-h-[1.5rem] text-red-400";
-      resultEl.textContent = payload.detail || payload.error || `Error ${resp.status}`;
-      return;
-    }
-
-    const trialUsed = resp.headers.get("X-MD2Docx-Trial-Used") === "true";
-    const blob = await resp.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${wizard.currentName || "documento"}.docx`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-
-    resultEl.className = "text-sm mb-3 min-h-[1.5rem] text-brand-green";
-    resultEl.textContent = trialUsed ? t("wizard.convertedOk") : t("wizard.convertedOkPro");
-  });
-
-  root.append(textarea, resultEl, convertBtn2);
-}
-</script>
+<script src="/assets/wizard.js"></script>
 </body>
 </html>

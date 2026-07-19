@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>API — Formalize</title>
+<meta name="description" content="Formalize API: convert Markdown to Word documents from your own product or CI/CD pipeline with a single authenticated HTTP endpoint." />
+<link rel="canonical" href="__SITE_URL__/api-access" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="API — Formalize" />
+<meta property="og:description" content="Convert Markdown to Word from your own product with a single authenticated HTTP endpoint." />
+<meta property="og:url" content="__SITE_URL__/api-access" />
+<meta property="og:image" content="__SITE_URL__/assets/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+<script>
+  if (typeof tailwind !== "undefined") {
+    tailwind.config = { theme: { extend: { colors: { brand: { DEFAULT: '#059669' } } } } };
+  }
+</script>
+</head>
+<body class="bg-white text-slate-900 min-h-screen antialiased">
+
+<header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
+  <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+    <a href="/" class="flex items-center gap-2 font-bold text-slate-900 text-lg shrink-0">
+      <svg width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <rect x="2" y="2" width="24" height="24" rx="5" fill="#059669"/>
+        <path d="M18 2v6h6" fill="#6ee7b7"/>
+        <rect x="7" y="13" width="12" height="2" rx="1" fill="white"/>
+        <rect x="7" y="17" width="12" height="2" rx="1" fill="white"/>
+        <rect x="7" y="21" width="8" height="2" rx="1" fill="white"/>
+      </svg>
+      Formalize
+    </a>
+    <nav class="hidden md:flex items-center gap-6 text-sm text-slate-600 font-medium">
+      <a href="/" data-i18n="nav.home" class="hover:text-slate-900">Home</a>
+      <a href="/pricing" data-i18n="nav.pricing" class="hover:text-slate-900">Pricing</a>
+      <a href="/api-access" class="text-slate-900">API</a>
+    </nav>
+    <div class="flex items-center gap-2 text-sm">
+      <button id="lang-toggle" class="border border-slate-300 rounded-full px-2.5 py-1 text-xs font-semibold text-slate-600 hover:border-slate-400">EN</button>
+      <span id="tier-badge" class="hidden border border-emerald-300 text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase"></span>
+      <span id="user-email" class="hidden text-slate-500 text-xs max-w-[10rem] truncate"></span>
+      <button id="btn-app" class="hidden bg-slate-900 text-white font-semibold rounded-full px-3.5 py-1.5 text-xs" data-i18n="nav.myTemplates">My templates</button>
+      <button id="btn-logout" class="hidden border border-slate-300 rounded-full px-3.5 py-1.5 text-xs" data-i18n="nav.logout">Log out</button>
+      <button id="btn-login" class="border border-slate-300 rounded-full px-3.5 py-1.5 text-xs" data-i18n="nav.login">Log in</button>
+      <button id="btn-signup" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-full px-3.5 py-1.5 text-xs" data-i18n="nav.signup">Sign up</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-4 py-14">
+  <div class="mb-12">
+    <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3" data-i18n="api.title">Build document generation into your product</h1>
+    <p class="text-slate-500 text-lg" data-i18n="api.subtitle">A single authenticated endpoint that turns Markdown into a .docx. No SDK required — plain HTTP.</p>
+  </div>
+
+  <section class="mb-10">
+    <h2 class="text-lg font-bold text-slate-900 mb-2" data-i18n="api.authTitle">Authentication</h2>
+    <p class="text-slate-500 text-sm mb-3" data-i18n="api.authDesc">Every request needs an X-API-Key header. Keys are issued per account and never stored in plain text on our side.</p>
+    <pre class="bg-slate-900 text-slate-100 rounded-xl p-4 text-xs overflow-auto">X-API-Key: YOUR_API_KEY</pre>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="text-lg font-bold text-slate-900 mb-2" data-i18n="api.endpointTitle">Endpoint</h2>
+    <pre class="bg-slate-900 text-slate-100 rounded-xl p-4 text-xs overflow-auto">POST https://api.formalize.app/api/v1/b2b/convert
+Content-Type: multipart/form-data</pre>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="text-lg font-bold text-slate-900 mb-2" data-i18n="api.paramsTitle">Form fields</h2>
+    <table class="w-full text-sm border border-slate-200 rounded-xl overflow-hidden">
+      <tbody>
+        <tr class="border-b border-slate-200"><td class="px-4 py-2.5 font-mono text-emerald-700 bg-slate-50 w-40">markdown</td><td class="px-4 py-2.5 text-slate-600" data-i18n="api.paramMarkdown">the Markdown source (required)</td></tr>
+        <tr class="border-b border-slate-200"><td class="px-4 py-2.5 font-mono text-emerald-700 bg-slate-50">template</td><td class="px-4 py-2.5 text-slate-600" data-i18n="api.paramTemplate">catalog template ID, or omit for the clean default</td></tr>
+        <tr class="border-b border-slate-200"><td class="px-4 py-2.5 font-mono text-emerald-700 bg-slate-50">title</td><td class="px-4 py-2.5 text-slate-600" data-i18n="api.paramTitle">document title (used if not already in frontmatter)</td></tr>
+        <tr class="border-b border-slate-200"><td class="px-4 py-2.5 font-mono text-emerald-700 bg-slate-50">author</td><td class="px-4 py-2.5 text-slate-600" data-i18n="api.paramAuthor">document author (used if not already in frontmatter)</td></tr>
+        <tr><td class="px-4 py-2.5 font-mono text-emerald-700 bg-slate-50">filename</td><td class="px-4 py-2.5 text-slate-600" data-i18n="api.paramFilename">output filename, without extension</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="text-lg font-bold text-slate-900 mb-2" data-i18n="api.requestTitle">Example request</h2>
+    <pre class="bg-slate-900 text-slate-100 rounded-xl p-4 text-xs overflow-auto"><code>curl -X POST https://api.formalize.app/api/v1/b2b/convert \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -F "markdown=# Quarterly Report
+
+Revenue is up **12%** this quarter.
+
+| Metric | Status |
+|---|---|
+| Uptime | PASS |
+| Latency | FAIL |
+" \
+  -F "filename=quarterly-report" \
+  -o quarterly-report.docx</code></pre>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="text-lg font-bold text-slate-900 mb-2" data-i18n="api.responseTitle">Response</h2>
+    <p class="text-slate-500 text-sm" data-i18n="api.responseDesc">A binary .docx file (Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document), ready to save or stream to your users.</p>
+  </section>
+
+  <section class="mb-10 border-t border-slate-200 pt-8">
+    <h2 class="text-lg font-bold text-slate-900 mb-2" data-i18n="api.pricingTitle">Pricing</h2>
+    <p class="text-slate-500 text-sm">
+      <span data-i18n="api.pricingDesc">Pay per conversion — no seats, no minimums. See the</span>
+      <a href="/pricing" class="text-emerald-700 font-semibold underline" data-i18n="api.pricingLink">pricing page</a>.
+    </p>
+  </section>
+
+  <section class="bg-slate-50 border border-slate-200 rounded-2xl p-8 text-center">
+    <h2 class="text-xl font-bold text-slate-900 mb-2" data-i18n="api.ctaTitle">Want access?</h2>
+    <p class="text-slate-500 text-sm mb-5" data-i18n="api.ctaDesc">Tell us about your use case and we'll set you up with a key.</p>
+    <a href="mailto:hello@formalize.app" class="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-6 py-2.5 text-sm" data-i18n="api.cta">Get API access</a>
+  </section>
+</main>
+
+<footer class="border-t border-slate-200">
+  <div class="max-w-6xl mx-auto px-4 py-10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+    <p data-i18n="footer.tagline">Formalize — paste Markdown, download Word. No tags, no JSON, no code.</p>
+    <div class="flex items-center gap-5">
+      <a href="/pricing" data-i18n="nav.pricing" class="hover:text-slate-900">Pricing</a>
+      <a href="/api-access" class="text-slate-900">API</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Modal de Login -->
+<div id="login-overlay" class="hidden fixed inset-0 bg-slate-900/40 items-center justify-center z-50 px-4">
+  <div class="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+    <div class="flex justify-between items-start mb-3">
+      <h2 class="font-semibold text-slate-900" data-i18n="auth.loginTitle">Log in</h2>
+      <span class="close-x cursor-pointer text-slate-400" data-close="login-overlay">✕</span>
+    </div>
+    <div id="login-error" class="text-red-600 text-xs min-h-[1rem] mb-2"></div>
+    <input type="email" id="login-email" data-i18n-placeholder="auth.emailPlaceholder" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2 text-sm" />
+    <input type="password" id="login-password" data-i18n-placeholder="auth.passwordPlaceholder" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-3 text-sm" />
+    <button id="login-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-3 py-2 text-sm" data-i18n="auth.loginSubmit">Log in</button>
+    <p class="text-xs text-emerald-700 mt-3 cursor-pointer switch-link" data-switch="signup-overlay" data-close="login-overlay" data-i18n="auth.switchToSignup">No account? Sign up</p>
+  </div>
+</div>
+
+<!-- Modal de Signup -->
+<div id="signup-overlay" class="hidden fixed inset-0 bg-slate-900/40 items-center justify-center z-50 px-4">
+  <div class="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+    <div class="flex justify-between items-start mb-3">
+      <h2 class="font-semibold text-slate-900" data-i18n="auth.signupTitle">Create account</h2>
+      <span class="close-x cursor-pointer text-slate-400" data-close="signup-overlay">✕</span>
+    </div>
+    <div id="signup-error" class="text-red-600 text-xs min-h-[1rem] mb-2"></div>
+    <input type="email" id="signup-email" data-i18n-placeholder="auth.emailPlaceholder" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2 text-sm" />
+    <input type="password" id="signup-password" data-i18n-placeholder="auth.passwordPlaceholderMin" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-3 text-sm" />
+    <button id="signup-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-3 py-2 text-sm" data-i18n="auth.signupSubmit">Create account</button>
+    <p class="text-xs text-emerald-700 mt-3 cursor-pointer switch-link" data-switch="login-overlay" data-close="signup-overlay" data-i18n="auth.switchToLogin">Already have an account? Log in</p>
+  </div>
+</div>
+
+<script src="/assets/shared.js"></script>
+<script>
+const CONFIG = {
+  SUPABASE_URL: "__SUPABASE_URL__",
+  SUPABASE_ANON_KEY: "__SUPABASE_ANON_KEY__",
+  API_BASE_URL: "__API_BASE_URL__" || "",
+};
+applyI18n();
+initLangToggle();
+wireAuthUI(CONFIG);
+</script>
+</body>
+</html>

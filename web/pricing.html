@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pricing — Formalize</title>
+<meta name="description" content="Formalize pricing: unlimited free conversion, Pro at €79/year for your own corporate template, and metered API access for developers." />
+<link rel="canonical" href="__SITE_URL__/pricing" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Pricing — Formalize" />
+<meta property="og:description" content="Free unlimited conversion, Pro at €79/year, and metered API access." />
+<meta property="og:url" content="__SITE_URL__/pricing" />
+<meta property="og:image" content="__SITE_URL__/assets/og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+<script>
+  if (typeof tailwind !== "undefined") {
+    tailwind.config = { theme: { extend: { colors: { brand: { DEFAULT: '#059669' } } } } };
+  }
+</script>
+</head>
+<body class="bg-white text-slate-900 min-h-screen antialiased">
+
+<header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200">
+  <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+    <a href="/" class="flex items-center gap-2 font-bold text-slate-900 text-lg shrink-0">
+      <svg width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+        <rect x="2" y="2" width="24" height="24" rx="5" fill="#059669"/>
+        <path d="M18 2v6h6" fill="#6ee7b7"/>
+        <rect x="7" y="13" width="12" height="2" rx="1" fill="white"/>
+        <rect x="7" y="17" width="12" height="2" rx="1" fill="white"/>
+        <rect x="7" y="21" width="8" height="2" rx="1" fill="white"/>
+      </svg>
+      Formalize
+    </a>
+    <nav class="hidden md:flex items-center gap-6 text-sm text-slate-600 font-medium">
+      <a href="/" data-i18n="nav.home" class="hover:text-slate-900">Home</a>
+      <a href="/pricing" class="text-slate-900">Pricing</a>
+      <a href="/api-access" data-i18n="nav.api" class="hover:text-slate-900">API</a>
+    </nav>
+    <div class="flex items-center gap-2 text-sm">
+      <button id="lang-toggle" class="border border-slate-300 rounded-full px-2.5 py-1 text-xs font-semibold text-slate-600 hover:border-slate-400">EN</button>
+      <span id="tier-badge" class="hidden border border-emerald-300 text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase"></span>
+      <span id="user-email" class="hidden text-slate-500 text-xs max-w-[10rem] truncate"></span>
+      <button id="btn-app" class="hidden bg-slate-900 text-white font-semibold rounded-full px-3.5 py-1.5 text-xs" data-i18n="nav.myTemplates">My templates</button>
+      <button id="btn-logout" class="hidden border border-slate-300 rounded-full px-3.5 py-1.5 text-xs" data-i18n="nav.logout">Log out</button>
+      <button id="btn-login" class="border border-slate-300 rounded-full px-3.5 py-1.5 text-xs" data-i18n="nav.login">Log in</button>
+      <button id="btn-signup" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-full px-3.5 py-1.5 text-xs" data-i18n="nav.signup">Sign up</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-14">
+  <div class="text-center mb-12">
+    <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2" data-i18n="pricing.title">Simple pricing</h1>
+    <p class="text-slate-500" data-i18n="pricing.subtitle">Start free. Upgrade only when you need your own template.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+    <div class="border border-slate-200 rounded-2xl p-6 flex flex-col">
+      <h2 class="font-bold text-lg text-slate-900" data-i18n="pricing.free.name">Free</h2>
+      <p class="text-4xl font-extrabold my-3 text-slate-900" data-i18n="pricing.free.price">€0</p>
+      <p class="text-xs text-slate-400 mb-4" data-i18n="pricing.free.period">forever</p>
+      <p class="text-sm text-slate-500 mb-5" data-i18n="pricing.free.desc">The lead magnet — better than the other free converters out there.</p>
+      <ul class="text-sm text-slate-600 space-y-2 mb-6 flex-1">
+        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.free.f1">Unlimited conversions</span></li>
+        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.free.f2">No signup required</span></li>
+        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.free.f3">Clean generic template</span></li>
+        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.free.f4">Pass/Fail table coloring</span></li>
+      </ul>
+      <a href="/" class="text-center border border-slate-300 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-50" data-i18n="pricing.free.cta">Start converting</a>
+    </div>
+
+    <div class="border-2 border-emerald-500 rounded-2xl p-6 flex flex-col shadow-sm relative">
+      <span class="absolute -top-3 right-6 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">POPULAR</span>
+      <h2 class="font-bold text-lg text-emerald-700" data-i18n="pricing.pro.name">Pro</h2>
+      <p class="text-4xl font-extrabold my-3 text-slate-900">
+        <span data-i18n="pricing.pro.price">€79</span> <span class="text-base font-medium text-slate-400" data-i18n="pricing.pro.period">/ year</span>
+      </p>
+      <p class="text-sm text-slate-500 mb-5" data-i18n="pricing.pro.desc">For anyone who needs their own corporate template.</p>
+      <ul class="text-sm text-slate-600 space-y-2 mb-6 flex-1">
+        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.pro.f1">Persistent custom .dotx/.docx template</span></li>
+        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.pro.f2">Automatic style mapping (with manual fallback)</span></li>
+        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.pro.f3">Conditional rules (Pass/Fail)</span></li>
+        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.pro.f4">1 free trial download before you pay</span></li>
+      </ul>
+      <button id="pricing-pro-cta" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-4 py-2 text-sm" data-i18n="pricing.pro.cta">Upload your template</button>
+    </div>
+
+    <div class="border border-slate-200 rounded-2xl p-6 flex flex-col">
+      <h2 class="font-bold text-lg text-slate-900" data-i18n="pricing.api.name">API</h2>
+      <p class="text-4xl font-extrabold my-3 text-slate-900" data-i18n="pricing.api.price">Pay per use</p>
+      <p class="text-xs text-slate-400 mb-4">&nbsp;</p>
+      <p class="text-sm text-slate-500 mb-5" data-i18n="pricing.api.desc">For CI/CD pipelines and product integrations.</p>
+      <ul class="text-sm text-slate-600 space-y-2 mb-6 flex-1">
+        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.api.f1">Machine-to-machine endpoint</span></li>
+        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.api.f2">Authenticated with an API key</span></li>
+        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.api.f3">No per-seat pricing</span></li>
+        <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.api.f4">Built for automation</span></li>
+      </ul>
+      <a href="/api-access" class="text-center border border-slate-300 rounded-lg px-4 py-2 text-sm font-semibold hover:bg-slate-50" data-i18n="pricing.api.cta">Talk to us</a>
+    </div>
+  </div>
+
+  <div class="max-w-2xl mx-auto">
+    <h2 class="text-xl font-bold text-slate-900 text-center mb-6" data-i18n="pricing.faqTitle">Questions</h2>
+    <div class="space-y-4">
+      <div class="border border-slate-200 rounded-xl p-4">
+        <p class="font-semibold text-slate-900 text-sm mb-1" data-i18n="pricing.faq1q">Is the free plan really unlimited?</p>
+        <p class="text-sm text-slate-500" data-i18n="pricing.faq1a">Yes. It's rate-limited per IP only to stop abuse scripts, never to limit a real person.</p>
+      </div>
+      <div class="border border-slate-200 rounded-xl p-4">
+        <p class="font-semibold text-slate-900 text-sm mb-1" data-i18n="pricing.faq2q">What happens after my 1 free Pro download?</p>
+        <p class="text-sm text-slate-500" data-i18n="pricing.faq2a">You'll see a clear upgrade prompt — never a blurred or fake preview. The first download is always the real, complete file.</p>
+      </div>
+      <div class="border border-slate-200 rounded-xl p-4">
+        <p class="font-semibold text-slate-900 text-sm mb-1" data-i18n="pricing.faq3q">Can I cancel anytime?</p>
+        <p class="text-sm text-slate-500" data-i18n="pricing.faq3a">Yes, Pro is billed yearly with no lock-in beyond the current period.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="border-t border-slate-200">
+  <div class="max-w-6xl mx-auto px-4 py-10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+    <p data-i18n="footer.tagline">Formalize — paste Markdown, download Word. No tags, no JSON, no code.</p>
+    <div class="flex items-center gap-5">
+      <a href="/pricing" class="text-slate-900">Pricing</a>
+      <a href="/api-access" data-i18n="nav.api" class="hover:text-slate-900">API</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Modal de Login -->
+<div id="login-overlay" class="hidden fixed inset-0 bg-slate-900/40 items-center justify-center z-50 px-4">
+  <div class="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+    <div class="flex justify-between items-start mb-3">
+      <h2 class="font-semibold text-slate-900" data-i18n="auth.loginTitle">Log in</h2>
+      <span class="close-x cursor-pointer text-slate-400" data-close="login-overlay">✕</span>
+    </div>
+    <div id="login-error" class="text-red-600 text-xs min-h-[1rem] mb-2"></div>
+    <input type="email" id="login-email" data-i18n-placeholder="auth.emailPlaceholder" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2 text-sm" />
+    <input type="password" id="login-password" data-i18n-placeholder="auth.passwordPlaceholder" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-3 text-sm" />
+    <button id="login-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-3 py-2 text-sm" data-i18n="auth.loginSubmit">Log in</button>
+    <p class="text-xs text-emerald-700 mt-3 cursor-pointer switch-link" data-switch="signup-overlay" data-close="login-overlay" data-i18n="auth.switchToSignup">No account? Sign up</p>
+  </div>
+</div>
+
+<!-- Modal de Signup -->
+<div id="signup-overlay" class="hidden fixed inset-0 bg-slate-900/40 items-center justify-center z-50 px-4">
+  <div class="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+    <div class="flex justify-between items-start mb-3">
+      <h2 class="font-semibold text-slate-900" data-i18n="auth.signupTitle">Create account</h2>
+      <span class="close-x cursor-pointer text-slate-400" data-close="signup-overlay">✕</span>
+    </div>
+    <div id="signup-error" class="text-red-600 text-xs min-h-[1rem] mb-2"></div>
+    <input type="email" id="signup-email" data-i18n-placeholder="auth.emailPlaceholder" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2 text-sm" />
+    <input type="password" id="signup-password" data-i18n-placeholder="auth.passwordPlaceholderMin" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-3 text-sm" />
+    <button id="signup-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-3 py-2 text-sm" data-i18n="auth.signupSubmit">Create account</button>
+    <p class="text-xs text-emerald-700 mt-3 cursor-pointer switch-link" data-switch="login-overlay" data-close="signup-overlay" data-i18n="auth.switchToLogin">Already have an account? Log in</p>
+  </div>
+</div>
+
+<script src="/assets/shared.js"></script>
+<script>
+const CONFIG = {
+  SUPABASE_URL: "__SUPABASE_URL__",
+  SUPABASE_ANON_KEY: "__SUPABASE_ANON_KEY__",
+  API_BASE_URL: "__API_BASE_URL__" || "",
+};
+applyI18n();
+initLangToggle();
+wireAuthUI(CONFIG);
+
+document.getElementById("pricing-pro-cta").addEventListener("click", () => {
+  if (state.session) {
+    window.location.href = "/#app";
+  } else {
+    openModal("signup-overlay");
+  }
+});
+</script>
+</body>
+</html>
