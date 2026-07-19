@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Formalize — Paste Markdown, download Word</title>
-<meta name="description" content="Paste your ChatGPT or Claude answer, download a clean .docx instantly. No tags, no JSON, no code — and bring your own corporate Word template." />
+<title>AI to Word — Paste your AI's answer, download Word</title>
+<meta name="description" content="Paste your AI's answer, download a clean Word document instantly. No tags, no JSON, no code — and bring your own corporate Word template." />
 <link rel="canonical" href="__SITE_URL__/" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="Formalize — Paste Markdown, download Word" />
-<meta property="og:description" content="Paste your ChatGPT or Claude answer, download a clean .docx instantly. No tags, no JSON, no code." />
+<meta property="og:title" content="AI to Word — Paste your AI's answer, download Word" />
+<meta property="og:description" content="Paste your AI's answer, download a clean Word document instantly. No tags, no JSON, no code." />
 <meta property="og:url" content="__SITE_URL__/" />
 <meta property="og:image" content="__SITE_URL__/assets/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
@@ -25,6 +25,28 @@
   #preview td, #preview th { border: 1px solid rgb(226 232 240); padding: 0.35rem 0.6rem; }
   .pass-cell { background: #dcfce7 !important; color: #14532d !important; }
   .fail-cell { background: #fee2e2 !important; color: #7f1d1d !important; }
+
+  /* Animación de "generando documento" — dura un mínimo fijo (ver shared.js
+     withMinDuration) para transmitir trabajo real incluso en respuestas rápidas. */
+  .ai2w-loading { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 1rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 0.75rem; margin-top: 0.5rem; }
+  .ai2w-loading-ring { width: 26px; height: 26px; border-radius: 50%; border: 3px solid #a7f3d0; border-top-color: #059669; animation: ai2w-spin 0.8s linear infinite; flex-shrink: 0; }
+  @keyframes ai2w-spin { to { transform: rotate(360deg); } }
+  .ai2w-loading-doc { display: flex; flex-direction: column; gap: 3px; width: 34px; flex-shrink: 0; }
+  .ai2w-loading-doc span { display: block; height: 4px; border-radius: 2px; background: #059669; width: 0%; animation: ai2w-fill 1.3s ease-in-out infinite; }
+  .ai2w-loading-doc span:nth-child(1) { animation-delay: 0s; }
+  .ai2w-loading-doc span:nth-child(2) { animation-delay: 0.18s; }
+  .ai2w-loading-doc span:nth-child(3) { animation-delay: 0.36s; }
+  @keyframes ai2w-fill { 0% { width: 0%; } 50% { width: 100%; } 100% { width: 0%; } }
+  .ai2w-loading-text { font-size: 0.75rem; color: #047857; font-weight: 600; margin: 0; }
+
+  /* Sección de prompt de ejemplo: líneas aparecen escalonadas al entrar en viewport */
+  .ai2w-prompt-line { opacity: 0; transform: translateY(6px); }
+  .ai2w-prompt.in-view .ai2w-prompt-line { animation: ai2w-line-in 0.4s ease forwards; }
+  @keyframes ai2w-line-in { to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) {
+    .ai2w-loading-ring, .ai2w-loading-doc span { animation: none; }
+    .ai2w-prompt-line { opacity: 1; transform: none; animation: none; }
+  }
 </style>
 </head>
 <body class="bg-white text-slate-900 min-h-screen antialiased">
@@ -39,7 +61,7 @@
         <rect x="7" y="17" width="12" height="2" rx="1" fill="white"/>
         <rect x="7" y="21" width="8" height="2" rx="1" fill="white"/>
       </svg>
-      Formalize
+      AI to Word
     </a>
     <nav class="hidden md:flex items-center gap-6 text-sm text-slate-600 font-medium">
       <a href="/" data-i18n="nav.home" class="text-slate-900">Home</a>
@@ -73,7 +95,7 @@
       Your Word template. No tags, no JSON, no code. Paste and download.
     </h1>
     <p class="text-slate-500 text-base md:text-lg mb-2" data-i18n="hero.subtitle">
-      Paste your Claude or ChatGPT answer below and get a clean, formatted .docx in seconds — free and unlimited, no account needed.
+      Paste your AI's answer below and get a clean, formatted Word document in seconds — free and unlimited, no account needed.
     </p>
   </section>
 
@@ -113,10 +135,11 @@
       </div>
     </div>
     <p id="status-msg" class="text-xs text-slate-500 mt-2 min-h-[1rem]"></p>
+    <div id="convert-loading-slot"></div>
   </section>
 
   <!-- Gancho de upgrade -->
-  <section class="max-w-6xl mx-auto px-4 py-14 border-t border-slate-200">
+  <section id="upgrade-hook-section" class="max-w-6xl mx-auto px-4 py-14 border-t border-slate-200">
     <div class="text-center mb-10">
       <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2" data-i18n="compare.title">
         Good enough to ship. Better with your own brand.
@@ -125,25 +148,45 @@
         The free output already looks clean. Upload your corporate template once and every future document inherits it automatically.
       </p>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-      <div class="border border-slate-200 rounded-2xl p-6 bg-slate-50">
-        <p class="text-xs font-semibold text-slate-400 mb-4" data-i18n="compare.genericLabel">GENERIC (free)</p>
-        <div class="h-3 w-2/3 bg-slate-300 rounded mb-3"></div>
-        <div class="h-2 w-full bg-slate-200 rounded mb-1.5"></div>
-        <div class="h-2 w-full bg-slate-200 rounded mb-1.5"></div>
-        <div class="h-2 w-5/6 bg-slate-200 rounded mb-3"></div>
-        <div class="h-2 w-1/2 bg-slate-300 rounded mb-1.5"></div>
-        <div class="h-2 w-full bg-slate-200 rounded"></div>
+    <div class="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 max-w-2xl mx-auto">
+      <!-- Genérico -->
+      <div class="w-48 sm:w-56 shrink-0">
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 aspect-[3/4] flex flex-col">
+          <div class="h-3 w-3/4 bg-slate-800 rounded mb-3"></div>
+          <div class="h-1.5 w-full bg-slate-200 rounded mb-1.5"></div>
+          <div class="h-1.5 w-full bg-slate-200 rounded mb-1.5"></div>
+          <div class="h-1.5 w-5/6 bg-slate-200 rounded mb-3"></div>
+          <div class="border border-slate-200 rounded overflow-hidden mt-auto flex text-[8px] font-bold text-slate-400 uppercase">
+            <div class="flex-1 bg-slate-100 text-center py-1">Result</div>
+            <div class="flex-1 bg-slate-100 text-center py-1 border-l border-slate-200">Result</div>
+          </div>
+        </div>
+        <p class="text-center text-xs font-semibold text-slate-400 mt-3" data-i18n="compare.genericLabel">GENERIC (free)</p>
       </div>
-      <div class="border-2 border-emerald-500 rounded-2xl p-6 relative bg-white shadow-sm">
-        <span class="absolute -top-3 right-4 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full" data-i18n="compare.proBadge">PRO</span>
-        <p class="text-xs font-semibold text-emerald-600 mb-4" data-i18n="compare.customLabel">WITH YOUR TEMPLATE</p>
-        <div class="h-3 w-2/3 bg-emerald-500 rounded mb-3"></div>
-        <div class="h-2 w-full bg-slate-200 rounded mb-1.5"></div>
-        <div class="h-2 w-full bg-slate-200 rounded mb-1.5"></div>
-        <div class="h-2 w-5/6 bg-slate-200 rounded mb-3"></div>
-        <div class="h-2 w-1/2 bg-sky-500 rounded mb-1.5"></div>
-        <div class="h-2 w-full bg-slate-200 rounded"></div>
+
+      <div class="text-emerald-500 font-bold text-2xl rotate-90 md:rotate-0" aria-hidden="true">→</div>
+
+      <!-- Con tu plantilla -->
+      <div class="w-48 sm:w-56 shrink-0 relative">
+        <span class="absolute -top-3 right-2 z-10 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full" data-i18n="compare.proBadge">PRO</span>
+        <div class="bg-white border-2 border-emerald-500 rounded-xl shadow-md p-4 aspect-[3/4] relative overflow-hidden">
+          <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500"></div>
+          <div class="pl-2 flex flex-col h-full">
+            <div class="flex items-center gap-1.5 mb-3">
+              <span class="w-4 h-4 rounded bg-emerald-600 inline-block shrink-0"></span>
+              <span class="h-1.5 w-12 bg-slate-300 rounded"></span>
+            </div>
+            <div class="h-3 w-3/4 bg-emerald-600 rounded mb-3"></div>
+            <div class="h-1.5 w-full bg-slate-200 rounded mb-1.5"></div>
+            <div class="h-1.5 w-full bg-slate-200 rounded mb-1.5"></div>
+            <div class="h-1.5 w-5/6 bg-slate-200 rounded mb-3"></div>
+            <div class="border border-slate-200 rounded overflow-hidden mt-auto flex text-[8px] font-bold uppercase">
+              <div class="flex-1 bg-emerald-100 text-emerald-700 text-center py-1">Pass</div>
+              <div class="flex-1 bg-red-100 text-red-700 text-center py-1">Fail</div>
+            </div>
+          </div>
+        </div>
+        <p class="text-center text-xs font-semibold text-emerald-600 mt-3" data-i18n="compare.customLabel">WITH YOUR TEMPLATE</p>
       </div>
     </div>
     <div class="text-center mt-8">
@@ -155,29 +198,42 @@
 
   <!-- Casos de uso -->
   <section class="max-w-6xl mx-auto px-4 py-14 border-t border-slate-200">
-    <h2 class="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-10" data-i18n="usecases.title">Built for people who ship documents</h2>
+    <h2 class="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-2" data-i18n="usecases.title">Built for professionals in any sector</h2>
+    <p class="text-slate-500 text-center max-w-xl mx-auto mb-10" data-i18n="usecases.subtitle">From a student assignment to a technical report at work — if your AI can write it, we can turn it into Word.</p>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div class="border border-slate-200 rounded-2xl p-6">
         <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m22 10-10-5L2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5"/><path d="M22 10v6"/></svg>
         </div>
-        <h3 class="font-semibold text-slate-900 mb-2" data-i18n="usecases.case1.title">Consultants</h3>
-        <p class="text-sm text-slate-500" data-i18n="usecases.case1.desc">Turn proposals and reports into documents that already look like your firm — no manual reformatting.</p>
+        <h3 class="font-semibold text-slate-900 mb-2" data-i18n="usecases.case1.title">University assignments</h3>
+        <p class="text-sm text-slate-500" data-i18n="usecases.case1.desc">Turn your AI-drafted essay or thesis chapter into a properly formatted document your professor will accept.</p>
+      </div>
+      <div class="border border-slate-200 rounded-2xl p-6">
+        <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+        </div>
+        <h3 class="font-semibold text-slate-900 mb-2" data-i18n="usecases.case2.title">Engineering &amp; functional specs</h3>
+        <p class="text-sm text-slate-500" data-i18n="usecases.case2.desc">Structured specs and technical documentation, with tables and headings, ready to share with your team.</p>
       </div>
       <div class="border border-slate-200 rounded-2xl p-6">
         <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3"/><path d="m9 12 2 2 4-4"/></svg>
         </div>
-        <h3 class="font-semibold text-slate-900 mb-2" data-i18n="usecases.case2.title">QA &amp; technical reports</h3>
-        <p class="text-sm text-slate-500" data-i18n="usecases.case2.desc">Automatic Pass/Fail cell coloring in every results table, straight from your Markdown.</p>
+        <h3 class="font-semibold text-slate-900 mb-2" data-i18n="usecases.case3.title">QA &amp; technical reports</h3>
+        <p class="text-sm text-slate-500" data-i18n="usecases.case3.desc">Automatic Pass/Fail cell coloring in every results table, straight from your Markdown.</p>
       </div>
-      <div class="border border-slate-200 rounded-2xl p-6">
-        <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M5 7 2 13a3 3 0 0 0 6 0Z"/><path d="M19 7l-3 6a3 3 0 0 0 6 0Z"/></svg>
-        </div>
-        <h3 class="font-semibold text-slate-900 mb-2" data-i18n="usecases.case3.title">Expert witnesses</h3>
-        <p class="text-sm text-slate-500" data-i18n="usecases.case3.desc">Generate signed-ready expert reports with your own letterhead, every time.</p>
-      </div>
+    </div>
+  </section>
+
+  <!-- Ejemplo de prompt para conseguir un buen informe -->
+  <section class="max-w-4xl mx-auto px-4 py-14 border-t border-slate-200">
+    <div class="text-center mb-8">
+      <h2 class="text-2xl md:text-3xl font-bold text-slate-900 mb-2" data-i18n="promptDemo.title">Not sure what to ask your AI?</h2>
+      <p class="text-slate-500 max-w-xl mx-auto" data-i18n="promptDemo.subtitle">Copy this prompt, paste it into your AI, then drop the answer above.</p>
+    </div>
+    <div class="ai2w-prompt bg-slate-900 text-slate-100 rounded-2xl p-5 md:p-6 relative">
+      <button id="prompt-copy-btn" class="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-full px-3 py-1.5" data-i18n="promptDemo.copyBtn">Copy prompt</button>
+      <pre id="prompt-lines" class="text-xs md:text-sm leading-relaxed font-mono whitespace-pre-wrap pr-24"></pre>
     </div>
   </section>
 
@@ -191,7 +247,7 @@
         </p>
         <a href="/api-access" class="inline-block bg-slate-900 hover:bg-slate-700 text-white font-semibold rounded-lg px-5 py-2.5 text-sm" data-i18n="apiTeaser.cta">See API docs</a>
       </div>
-      <pre class="bg-slate-900 text-slate-100 rounded-xl p-4 text-xs overflow-auto"><code>curl -X POST https://api.formalize.app/api/v1/b2b/convert \
+      <pre class="bg-slate-900 text-slate-100 rounded-xl p-4 text-xs overflow-auto"><code>curl -X POST https://api.aitoword.app/api/v1/b2b/convert \
   -H "X-API-Key: YOUR_API_KEY" \
   -F "markdown=# Report" \
   -o report.docx</code></pre>
@@ -200,7 +256,7 @@
 
   <footer class="border-t border-slate-200">
     <div class="max-w-6xl mx-auto px-4 py-10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
-      <p data-i18n="footer.tagline">Formalize — paste Markdown, download Word. No tags, no JSON, no code.</p>
+      <p data-i18n="footer.tagline">AI to Word — paste your AI's answer, download Word. No tags, no JSON, no code.</p>
       <div class="flex items-center gap-5">
         <a href="/pricing" data-i18n="nav.pricing" class="hover:text-slate-900">Pricing</a>
         <a href="/api-access" data-i18n="nav.api" class="hover:text-slate-900">API</a>
@@ -209,8 +265,8 @@
   </footer>
 </main>
 
-<!-- ==================== APP / WIZARD PRO ==================== -->
-<main id="app-view" class="hidden max-w-3xl mx-auto px-4 py-10 min-h-[60vh]"></main>
+<!-- ==================== APP / WIZARD PRO (Studio) ==================== -->
+<main id="app-view" class="hidden max-w-4xl mx-auto px-4 py-10 min-h-[60vh] bg-slate-50"></main>
 
 <!-- Modal de Login -->
 <div id="login-overlay" class="hidden fixed inset-0 bg-slate-900/40 items-center justify-center z-50 px-4">
@@ -251,8 +307,60 @@ const CONFIG = {
 };
 
 applyI18n();
-initLangToggle(renderPreview);
+initLangToggle(() => { renderPreview(); renderPromptLines(); });
 wireAuthUI(CONFIG);
+
+// ---------------------------------------------------------------------
+// Prompt de ejemplo: líneas se escalonan al entrar en viewport.
+// ---------------------------------------------------------------------
+const promptLinesEl = document.getElementById("prompt-lines");
+
+function renderPromptLines() {
+  const lines = t("promptDemo.promptLines");
+  promptLinesEl.innerHTML = "";
+  (Array.isArray(lines) ? lines : []).forEach((line, i) => {
+    const span = document.createElement("span");
+    span.className = "ai2w-prompt-line block";
+    span.style.animationDelay = `${i * 70}ms`;
+    span.textContent = line || " ";
+    promptLinesEl.appendChild(span);
+  });
+}
+renderPromptLines();
+
+const promptSection = document.querySelector(".ai2w-prompt");
+const promptObserver = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
+      promptSection.classList.add("in-view");
+      promptObserver.disconnect();
+    }
+  });
+}, { threshold: 0.3 });
+promptObserver.observe(promptSection);
+
+document.getElementById("prompt-copy-btn").addEventListener("click", async (e) => {
+  const btn = e.currentTarget;
+  const text = t("promptDemo.promptLines").join("\n");
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    // Portapapeles no disponible (permiso/navegador viejo): no rompemos nada más.
+  }
+  const original = btn.textContent;
+  btn.textContent = t("promptDemo.copiedBtn");
+  setTimeout(() => { btn.textContent = original; }, 1500);
+});
+
+// ---------------------------------------------------------------------
+// Ocultar el "gancho" de upgrade a quien ya es Pro/Enterprise — ya sabe
+// cómo funciona, no necesita que se lo sigamos vendiendo (ver CLAUDE.md
+// nota de julio: dejar de mostrar los banners explicativos de Pro).
+// ---------------------------------------------------------------------
+document.addEventListener("ai2w:auth", (e) => {
+  const isPaid = e.detail.tier === "pro" || e.detail.tier === "enterprise";
+  document.getElementById("upgrade-hook-section").classList.toggle("hidden", isPaid);
+});
 
 // Warm-up ping (mitiga cold start de Render): no bloquea el uso del hero.
 (function warmup() {
@@ -342,14 +450,14 @@ document.getElementById("btn-app").addEventListener("click", showApp);
 // ---------------------------------------------------------------------
 const statusMsg = document.getElementById("status-msg");
 const convertBtn = document.getElementById("convert-btn");
+const loadingSlot = document.getElementById("convert-loading-slot");
 
 function setStatus(text, kind) {
   statusMsg.textContent = text || "";
   statusMsg.className = "text-xs mt-2 min-h-[1rem] " + (kind === "error" ? "text-red-600" : kind === "ok" ? "text-emerald-600" : "text-slate-500");
 }
 
-convertBtn.addEventListener("click", async () => {
-  setStatus(t("hero.converting"));
+async function runConversion() {
   const formData = new FormData();
   formData.append("markdown", editor.value || "");
   formData.append("template", document.getElementById("template-select").value);
@@ -381,6 +489,18 @@ convertBtn.addEventListener("click", async () => {
     setStatus(t("hero.downloaded"), "ok");
   } catch (err) {
     setStatus(`${err.message}`, "error");
+  }
+}
+
+convertBtn.addEventListener("click", async () => {
+  setStatus("");
+  convertBtn.disabled = true;
+  showLoadingIn(loadingSlot);
+  try {
+    await withMinDuration(runConversion(), 3000);
+  } finally {
+    hideLoadingIn(loadingSlot);
+    convertBtn.disabled = false;
   }
 });
 </script>

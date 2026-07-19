@@ -1,12 +1,14 @@
-/* Pro wizard (subir -> mapear estilos -> conversión de prueba), contra los
-   endpoints de pro_templates.py (ver CLAUDE.md §5.2). Un usuario 'free'
-   tiene derecho a 1 descarga real de prueba antes de que el backend
+/* AI to Word — Pro wizard (subir -> mapear estilos -> conversión de prueba),
+   contra los endpoints de pro_templates.py (ver CLAUDE.md §5.2). Un usuario
+   'free' tiene derecho a 1 descarga real de prueba antes de que el backend
    empiece a devolver 402 — se refleja tal cual, sin difuminar ni fingir
    que el documento "está listo" cuando no lo está. Depende de shared.js
-   (t, getAuthHeader, CONFIG) y de showLanding, ya cargados en index.html. */
+   (t, getAuthHeader, CONFIG, state, showLoadingIn/hideLoadingIn/withMinDuration)
+   y de showLanding, ya cargados en index.html. */
 
 const PRO_API = `${CONFIG.API_BASE_URL}/api/pro/templates`;
 const MAPPING_SLOTS = ["heading_1", "heading_2", "heading_3", "table"];
+const WIZARD_STEPS = ["step1", "step2", "step3"];
 
 const wizard = {
   templates: [],
@@ -37,35 +39,81 @@ window.renderWizard = async function renderWizard() {
   paintWizard();
 };
 
+// ---------------------------------------------------------------------
+// Shell "studio": barra oscura con título + stepper, cuerpo con la
+// vista activa. Visualmente distinto de la landing de marketing, para
+// que el área logueada se sienta como una herramienta de verdad.
+// ---------------------------------------------------------------------
 function paintWizard() {
   const root = document.getElementById("app-view");
   root.innerHTML = "";
 
-  const back = el("button", "text-sm text-slate-500 hover:text-slate-900 mb-4", t("wizard.backToLanding"));
-  back.addEventListener("click", showLanding);
-  root.appendChild(back);
+  const shell = el("div", "bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden");
 
-  root.appendChild(el("h1", "text-xl font-bold text-slate-900 mb-6", t("wizard.title")));
+  const topbar = el("div", "flex items-center justify-between gap-4 px-6 py-5 bg-slate-900");
+  const titleWrap = el("div");
+  titleWrap.appendChild(el("p", "text-[11px] font-semibold uppercase tracking-wide text-emerald-400 mb-0.5", t("wizard.studioLabel")));
+  titleWrap.appendChild(el("h1", "text-lg font-bold text-white", t("wizard.title")));
+  const backBtn = el("button", "text-xs text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 rounded-full px-3 py-1.5 shrink-0", t("wizard.backToLanding"));
+  backBtn.addEventListener("click", showLanding);
+  topbar.append(titleWrap, backBtn);
+  shell.appendChild(topbar);
 
-  if (wizard.view === "list") paintList(root);
-  else if (wizard.view === "step1") paintStep1(root);
-  else if (wizard.view === "step2") paintStep2(root);
-  else if (wizard.view === "step3") paintStep3(root);
+  if (wizard.view !== "list") shell.appendChild(buildStepper());
+
+  const body = el("div", "p-6 md:p-8");
+  shell.appendChild(body);
+  root.appendChild(shell);
+
+  if (wizard.view === "list") paintList(body);
+  else if (wizard.view === "step1") paintStep1(body);
+  else if (wizard.view === "step2") paintStep2(body);
+  else if (wizard.view === "step3") paintStep3(body);
+}
+
+function buildStepper() {
+  const labels = [t("wizard.stepUpload"), t("wizard.stepMap"), t("wizard.stepConvert")];
+  const currentIdx = WIZARD_STEPS.indexOf(wizard.view);
+
+  const bar = el("div", "flex items-center px-6 py-4 bg-slate-50 border-b border-slate-200");
+  labels.forEach((label, i) => {
+    const done = i < currentIdx;
+    const active = i === currentIdx;
+    const item = el("div", "flex items-center gap-2 shrink-0");
+    const circle = el(
+      "span",
+      "w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold " +
+        (active ? "bg-emerald-600 text-white" : done ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"),
+      done ? "✓" : String(i + 1)
+    );
+    const labelEl = el("span", "text-xs font-semibold " + (active ? "text-slate-900" : "text-slate-400"), label);
+    item.append(circle, labelEl);
+    bar.appendChild(item);
+    if (i < labels.length - 1) bar.appendChild(el("span", "flex-1 h-px bg-slate-200 mx-3"));
+  });
+  return bar;
+}
+
+function isPaidTier() {
+  return state.tier === "pro" || state.tier === "enterprise";
 }
 
 function paintList(root) {
-  root.appendChild(el("h2", "font-semibold text-slate-900 mb-3", t("wizard.myTemplatesTitle")));
+  root.appendChild(el("h2", "font-semibold text-slate-900 mb-4", t("wizard.myTemplatesTitle")));
 
   if (wizard.templates.length === 0) {
-    root.appendChild(el("p", "text-sm text-slate-500 mb-4", t("wizard.noTemplates")));
+    root.appendChild(el("p", "text-sm text-slate-500 mb-6", t("wizard.noTemplates")));
   } else {
-    const list = el("div", "flex flex-col gap-2 mb-4");
+    const grid = el("div", "grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6");
     wizard.templates.forEach((tpl) => {
-      const row = el("div", "flex items-center justify-between border border-slate-200 rounded-xl px-4 py-3");
-      row.appendChild(el("span", "text-sm text-slate-800", tpl.name));
-      const actions = el("div", "flex gap-2");
+      const card = el("div", "border border-slate-200 rounded-xl p-4 hover:border-emerald-300 hover:shadow-sm transition flex flex-col gap-4");
+      const head = el("div", "flex items-center gap-2 min-w-0");
+      const icon = el("span", "w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-bold shrink-0", "W");
+      const name = el("span", "text-sm font-semibold text-slate-800 truncate", tpl.name);
+      head.append(icon, name);
 
-      const useBtn = el("button", "text-xs bg-slate-900 text-white font-semibold rounded-full px-3 py-1.5", t("wizard.useBtn"));
+      const actions = el("div", "flex gap-2");
+      const useBtn = el("button", "flex-1 text-xs bg-slate-900 text-white font-semibold rounded-lg px-3 py-1.5", t("wizard.useBtn"));
       useBtn.addEventListener("click", () => {
         wizard.currentId = tpl.id;
         wizard.currentName = tpl.name;
@@ -73,7 +121,7 @@ function paintList(root) {
         paintWizard();
       });
 
-      const delBtn = el("button", "text-xs border border-slate-300 rounded-full px-3 py-1.5 text-slate-600", t("wizard.deleteBtn"));
+      const delBtn = el("button", "text-xs border border-slate-300 rounded-lg px-3 py-1.5 text-slate-500 hover:text-red-600 hover:border-red-300", t("wizard.deleteBtn"));
       delBtn.addEventListener("click", async () => {
         const headers = await getAuthHeader();
         await fetch(`${PRO_API}/${tpl.id}`, { method: "DELETE", headers });
@@ -81,10 +129,10 @@ function paintList(root) {
       });
 
       actions.append(useBtn, delBtn);
-      row.appendChild(actions);
-      list.appendChild(row);
+      card.append(head, actions);
+      grid.appendChild(card);
     });
-    root.appendChild(list);
+    root.appendChild(grid);
   }
 
   const newBtn = el("button", "bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-4 py-2 text-sm", t("wizard.newTemplateBtn"));
@@ -200,7 +248,11 @@ function paintStep2(root) {
 function paintStep3(root) {
   root.appendChild(el("h2", "font-semibold text-slate-900 mb-1", `${t("wizard.step3Title")} — ${wizard.currentName}`));
   root.appendChild(el("p", "text-sm text-slate-500 mb-1", t("wizard.step3Desc")));
-  root.appendChild(el("p", "text-xs text-slate-400 mb-4", t("wizard.trialNote")));
+  if (!isPaidTier()) {
+    root.appendChild(el("p", "text-xs text-slate-400 mb-4", t("wizard.trialNote")));
+  } else {
+    root.appendChild(el("div", "mb-4"));
+  }
 
   const textarea = document.createElement("textarea");
   textarea.className = "w-full border border-slate-300 rounded-lg p-3 font-mono text-sm mb-4";
@@ -208,12 +260,23 @@ function paintStep3(root) {
   textarea.value = "# Sample document\n\nThis is a paragraph.\n\n| Test | Result |\n|---|---|\n| A | PASS |\n";
 
   const resultEl = el("div", "text-sm mb-3 min-h-[1.5rem]");
+  const loadingSlot = el("div");
 
   const convertBtn2 = el("button", "bg-slate-900 hover:bg-slate-700 text-white font-bold rounded-lg px-4 py-2 text-sm", t("wizard.convertBtn"));
   convertBtn2.addEventListener("click", async () => {
-    resultEl.className = "text-sm mb-3 min-h-[1.5rem] text-slate-500";
-    resultEl.textContent = t("hero.converting");
+    convertBtn2.disabled = true;
+    resultEl.className = "text-sm mb-3 min-h-[1.5rem]";
+    resultEl.textContent = "";
+    showLoadingIn(loadingSlot);
+    try {
+      await withMinDuration(runTemplateConversion(), 3000);
+    } finally {
+      hideLoadingIn(loadingSlot);
+      convertBtn2.disabled = false;
+    }
+  });
 
+  async function runTemplateConversion() {
     const formData = new FormData();
     formData.append("markdown", textarea.value || "");
     formData.append("filename", wizard.currentName || "documento");
@@ -222,7 +285,6 @@ function paintStep3(root) {
 
     if (resp.status === 402) {
       const payload = await resp.json().catch(() => ({}));
-      resultEl.className = "text-sm mb-3 min-h-[1.5rem]";
       resultEl.innerHTML = "";
       resultEl.appendChild(el("p", "text-amber-600 font-semibold mb-1", t("wizard.trialUsedTitle")));
       resultEl.appendChild(el("p", "text-slate-500 text-xs mb-2", payload.detail || t("wizard.upgradeMessage")));
@@ -251,7 +313,7 @@ function paintStep3(root) {
 
     resultEl.className = "text-sm mb-3 min-h-[1.5rem] text-emerald-600";
     resultEl.textContent = trialUsed ? t("wizard.convertedOk") : t("wizard.convertedOkPro");
-  });
+  }
 
-  root.append(textarea, resultEl, convertBtn2);
+  root.append(textarea, resultEl, loadingSlot, convertBtn2);
 }

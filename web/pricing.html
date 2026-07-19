@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Pricing — Formalize</title>
-<meta name="description" content="Formalize pricing: unlimited free conversion, Pro at €79/year for your own corporate template, and metered API access for developers." />
+<title>Pricing — AI to Word</title>
+<meta name="description" content="AI to Word pricing: unlimited free conversion, Pro at €3.99/month for your own corporate template, and metered API access for developers." />
 <link rel="canonical" href="__SITE_URL__/pricing" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="Pricing — Formalize" />
-<meta property="og:description" content="Free unlimited conversion, Pro at €79/year, and metered API access." />
+<meta property="og:title" content="Pricing — AI to Word" />
+<meta property="og:description" content="Free unlimited conversion, Pro at €3.99/month, and metered API access." />
 <meta property="og:url" content="__SITE_URL__/pricing" />
 <meta property="og:image" content="__SITE_URL__/assets/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
@@ -32,7 +32,7 @@
         <rect x="7" y="17" width="12" height="2" rx="1" fill="white"/>
         <rect x="7" y="21" width="8" height="2" rx="1" fill="white"/>
       </svg>
-      Formalize
+      AI to Word
     </a>
     <nav class="hidden md:flex items-center gap-6 text-sm text-slate-600 font-medium">
       <a href="/" data-i18n="nav.home" class="hover:text-slate-900">Home</a>
@@ -73,12 +73,12 @@
     </div>
 
     <div class="border-2 border-emerald-500 rounded-2xl p-6 flex flex-col shadow-sm relative">
-      <span class="absolute -top-3 right-6 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">POPULAR</span>
+      <span id="pricing-pro-ribbon" class="absolute -top-3 right-6 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">POPULAR</span>
       <h2 class="font-bold text-lg text-emerald-700" data-i18n="pricing.pro.name">Pro</h2>
       <p class="text-4xl font-extrabold my-3 text-slate-900">
-        <span data-i18n="pricing.pro.price">€79</span> <span class="text-base font-medium text-slate-400" data-i18n="pricing.pro.period">/ year</span>
+        <span data-i18n="pricing.pro.price">€3.99</span> <span class="text-base font-medium text-slate-400" data-i18n="pricing.pro.period">/ month</span>
       </p>
-      <p class="text-sm text-slate-500 mb-5" data-i18n="pricing.pro.desc">For anyone who needs their own corporate template.</p>
+      <p class="text-sm text-slate-500 mb-5" data-i18n="pricing.pro.desc">Less than a coffee a month — for your own corporate template.</p>
       <ul class="text-sm text-slate-600 space-y-2 mb-6 flex-1">
         <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.pro.f1">Persistent custom .dotx/.docx template</span></li>
         <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="pricing.pro.f2">Automatic style mapping (with manual fallback)</span></li>
@@ -116,7 +116,7 @@
       </div>
       <div class="border border-slate-200 rounded-xl p-4">
         <p class="font-semibold text-slate-900 text-sm mb-1" data-i18n="pricing.faq3q">Can I cancel anytime?</p>
-        <p class="text-sm text-slate-500" data-i18n="pricing.faq3a">Yes, Pro is billed yearly with no lock-in beyond the current period.</p>
+        <p class="text-sm text-slate-500" data-i18n="pricing.faq3a">Yes. Pro is billed monthly, cancel whenever you want — no lock-in.</p>
       </div>
     </div>
   </div>
@@ -124,7 +124,7 @@
 
 <footer class="border-t border-slate-200">
   <div class="max-w-6xl mx-auto px-4 py-10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
-    <p data-i18n="footer.tagline">Formalize — paste Markdown, download Word. No tags, no JSON, no code.</p>
+    <p data-i18n="footer.tagline">AI to Word — paste your AI's answer, download Word. No tags, no JSON, no code.</p>
     <div class="flex items-center gap-5">
       <a href="/pricing" class="text-slate-900">Pricing</a>
       <a href="/api-access" data-i18n="nav.api" class="hover:text-slate-900">API</a>
@@ -178,6 +178,25 @@ document.getElementById("pricing-pro-cta").addEventListener("click", () => {
     window.location.href = "/#app";
   } else {
     openModal("signup-overlay");
+  }
+});
+
+// Quien ya es Pro/Enterprise no necesita que le sigan vendiendo el plan —
+// ver punto 9 de la ronda de UX de julio.
+document.addEventListener("ai2w:auth", (e) => {
+  const isPaid = e.detail.tier === "pro" || e.detail.tier === "enterprise";
+  const cta = document.getElementById("pricing-pro-cta");
+  const ribbon = document.getElementById("pricing-pro-ribbon");
+  if (isPaid) {
+    cta.textContent = t("pricing.pro.currentPlan");
+    cta.disabled = true;
+    cta.classList.add("opacity-60", "cursor-default");
+    ribbon.classList.add("hidden");
+  } else {
+    cta.textContent = t("pricing.pro.cta");
+    cta.disabled = false;
+    cta.classList.remove("opacity-60", "cursor-default");
+    ribbon.classList.remove("hidden");
   }
 });
 </script>
