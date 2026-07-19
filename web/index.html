@@ -415,12 +415,22 @@ async function loadProRecentTemplates() {
   });
 }
 
+let proAutoRouted = false;
 document.addEventListener("ai2w:auth", (e) => {
   const isPaid = e.detail.tier === "pro" || e.detail.tier === "enterprise";
   document.getElementById("upgrade-hook-section").classList.toggle("hidden", isPaid);
   document.getElementById("usecases-section").classList.toggle("hidden", isPaid);
   document.getElementById("pro-toolbox").classList.toggle("hidden", !isPaid);
-  if (isPaid) loadProRecentTemplates();
+  if (isPaid) {
+    loadProRecentTemplates();
+    // Un usuario Pro entra DIRECTO a su studio limpio, no a la landing de
+    // marketing con banners. Solo la primera vez que confirmamos que es Pro,
+    // para no arrastrarlo de vuelta si pulsa "← Volver al inicio".
+    if (!proAutoRouted) {
+      proAutoRouted = true;
+      if (typeof window.showApp === "function") window.showApp();
+    }
+  }
 });
 
 document.getElementById("pro-convert-btn").addEventListener("click", () => window.showApp());
