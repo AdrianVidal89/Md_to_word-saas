@@ -1,11 +1,15 @@
-# CLAUDE.md — MD2Docx SaaS
+# CLAUDE.md — Formalize
 
 Instrucciones de sistema para cualquier agente (Claude Code u otro) que trabaje
 en este repositorio. Léelo antes de tocar código.
 
+> **Nombre del producto**: Formalize (antes "MD2Docx" durante el desarrollo
+> inicial — si ves ese nombre en código viejo, capturas de pantalla o
+> conversaciones anteriores, es el mismo producto).
+
 ## 1. Qué es esto
 
-MD2Docx es un conversor **Markdown → DOCX** que nació como herramienta
+Formalize es un conversor **Markdown → DOCX** que nació como herramienta
 monolítica de un solo usuario y ha sido migrado a un **SaaS multi-tenant
 freemium/B2B** sobre Supabase. El valor de producto sigue siendo el mismo que
 en el origen:
@@ -68,9 +72,19 @@ Backend (Render, FastAPI, Python 3.11)
 Supabase (PostgreSQL managed + Auth + JWT)
 ```
 
-- **Frontend**: SPA estática (`web/index.html`), sin framework ni bundler.
-  Se despliega en Vercel como sitio estático. Usa el SDK `@supabase/supabase-js`
-  vía CDN para login/signup y para adjuntar el JWT a las llamadas al backend.
+- **Frontend**: 3 páginas HTML estáticas sin framework ni bundler —
+  `web/index.html` (home: hero conversor + wizard Pro), `web/pricing.html`,
+  `web/api-access.html` —, servidas por `main.py` (que rellena por request
+  los placeholders `__SUPABASE_URL__`/`__SUPABASE_ANON_KEY__`/
+  `__API_BASE_URL__`/`__SITE_URL__`/`<!--TEMPLATE_OPTIONS-->`; ver
+  `_render_page()`). Lógica común factorizada en `web/assets/shared.js`
+  (i18n, sesión de Supabase, modales de login/signup) y `web/assets/wizard.js`
+  (wizard Pro), incluidos como `<script src="/assets/...">` en cada página —
+  nunca dupliques esa lógica inline de nuevo. Tailwind se carga vía CDN (sin
+  build step); todo lo que dependa de un CDN externo (Supabase, marked.js,
+  Tailwind) debe ir siempre guardado con `try/catch`/`typeof` — un CDN caído
+  no puede tumbar el conversor gratuito (ver el bug real documentado en el
+  commit de QA de la Fase 5).
 - **Backend**: FastAPI (`main.py` + módulos `converter/`, `database.py`,
   `auth.py`, `models.py`), desplegado en Render como servicio web Python.
   Es **stateless** salvo por las lecturas/escrituras a Supabase — no persiste

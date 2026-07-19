@@ -1,7 +1,8 @@
 """FastAPI app: UI estática + API REST de conversión Markdown -> DOCX.
 
 Endpoints:
-- GET  /                       SPA (web/index.html)
+- GET  /, /pricing, /api-access  páginas estáticas (web/*.html)
+- GET  /robots.txt, /sitemap.xml SEO
 - GET  /healthz                warm-up / liveness (mitiga cold start de Render)
 - GET  /templates               catálogo de plantillas disponibles
 - POST /api/convert            conversión genérica: pública, sin login, sin
@@ -22,7 +23,7 @@ from typing import Optional
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
@@ -36,7 +37,7 @@ WEB_DIR = BASE_DIR / "web"
 
 MAX_MARKDOWN_BYTES = 2 * 1024 * 1024  # 2 MB: límite defensivo de payload
 
-app = FastAPI(title="MD2Docx SaaS")
+app = FastAPI(title="Formalize API")
 
 _frontend_origins = [o.strip() for o in os.environ.get("FRONTEND_ORIGINS", "").split(",") if o.strip()]
 app.add_middleware(
@@ -45,7 +46,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-MD2Docx-Trial-Used"],
+    expose_headers=["X-Formalize-Trial-Used"],
 )
 
 if (WEB_DIR / "assets").exists():
@@ -58,9 +59,20 @@ app.include_router(pro_templates_router)
 # UI estática
 # --------------------------------------------------------------------------
 
-@app.get("/", response_class=HTMLResponse)
-async def index() -> HTMLResponse:
-    html = (WEB_DIR / "index.html").read_text(encoding="utf-8")
+def _site_url(request: Request) -> str:
+    """URL pública absoluta del sitio, para OG tags/canonical/sitemap. Usa
+    PUBLIC_SITE_URL si está definida (útil detrás de proxies donde
+    request.base_url no refleja el dominio real), si no la deriva del propio
+    request — así funciona igual en local, en Render o tras un dominio propio
+    sin tener que hardcodear nada."""
+    override = os.environ.get("PUBLIC_SITE_URL", "").rstrip("/")
+    if override:
+        return override
+    return str(request.base_url).rstrip("/")
+
+
+def _render_page(request: Request, filename: str) -> HTMLResponse:
+    html = (WEB_DIR / filename).read_text(encoding="utf-8")
     options_html = "".join(
         f'<option value="{tpl["id"]}">{tpl["name"]}</option>' for tpl in list_templates()
     )
@@ -68,7 +80,37 @@ async def index() -> HTMLResponse:
     html = html.replace("__SUPABASE_URL__", os.environ.get("PUBLIC_SUPABASE_URL", ""))
     html = html.replace("__SUPABASE_ANON_KEY__", os.environ.get("PUBLIC_SUPABASE_ANON_KEY", ""))
     html = html.replace("__API_BASE_URL__", os.environ.get("PUBLIC_API_BASE_URL", ""))
+    html = html.replace("__SITE_URL__", _site_url(request))
     return HTMLResponse(html)
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request) -> HTMLResponse:
+    return _render_page(request, "index.html")
+
+
+@app.get("/pricing", response_class=HTMLResponse)
+async def pricing_page(request: Request) -> HTMLResponse:
+    return _render_page(request, "pricing.html")
+
+
+@app.get("/api-access", response_class=HTMLResponse)
+async def api_access_page(request: Request) -> HTMLResponse:
+    return _render_page(request, "api-access.html")
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def robots_txt(request: Request) -> PlainTextResponse:
+    content = f"User-agent: *\nAllow: /\nSitemap: {_site_url(request)}/sitemap.xml\n"
+    return PlainTextResponse(content)
+
+
+@app.get("/sitemap.xml")
+async def sitemap_xml(request: Request) -> Response:
+    site = _site_url(request)
+    urls = "".join(f"<url><loc>{site}{path}</loc></url>" for path in ("/", "/pricing", "/api-access"))
+    xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
+    return Response(content=xml, media_type="application/xml")
 
 
 @app.get("/templates")
