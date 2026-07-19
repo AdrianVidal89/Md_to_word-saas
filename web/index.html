@@ -1,306 +1,481 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>MD2Docx — Markdown a Word</title>
+<title>MD2Docx — Paste Markdown, download Word</title>
+<meta name="description" content="Paste your ChatGPT or Claude answer, download a clean .docx instantly. No tags, no JSON, no code — and bring your own corporate Word template." />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: {
+            green: '#3dcd58',
+            blue: '#00b0f0',
+          },
+        },
+      },
+    },
+  };
+</script>
 <style>
-  :root {
-    --bg: #0f1419;
-    --panel: #161b22;
-    --border: #2a313c;
-    --text: #e6edf3;
-    --muted: #8b949e;
-    --accent: #3dcd58;
-    --accent-blue: #00b0f0;
-    --danger: #ff6b6b;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-  }
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--border);
-  }
-  header h1 { font-size: 18px; margin: 0; }
-  header h1 span { color: var(--accent); }
-  #auth-area { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-  #auth-area button {
-    background: var(--accent);
-    border: none;
-    color: #06210c;
-    padding: 6px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-  }
-  #auth-area button.secondary {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text);
-  }
-  #tier-badge {
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    border: 1px solid var(--accent-blue);
-    color: var(--accent-blue);
-    text-transform: uppercase;
-  }
-  main {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    padding: 16px 20px;
-  }
-  .pane {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    min-height: 60vh;
-  }
-  .pane-title {
-    padding: 8px 12px;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--muted);
-    border-bottom: 1px solid var(--border);
-  }
-  #editor {
-    flex: 1;
-    background: transparent;
-    color: var(--text);
-    border: none;
-    resize: none;
-    padding: 12px;
-    font-family: "SFMono-Regular", Consolas, monospace;
-    font-size: 13px;
-    outline: none;
-  }
-  #preview-wrap { position: relative; flex: 1; overflow: auto; }
-  #preview { padding: 12px; font-size: 14px; line-height: 1.5; }
-  #preview blockquote {
-    border-left: 3px solid var(--accent);
-    margin: 0;
-    padding-left: 12px;
-    color: var(--muted);
-  }
+  #preview :where(td):first-child { border-left: none; }
+  #preview td, #preview th { border: 1px solid rgb(51 65 85); padding: 0.35rem 0.6rem; }
   #preview table { border-collapse: collapse; width: 100%; }
-  #preview th, #preview td { border: 1px solid var(--border); padding: 4px 8px; }
-  .hint { font-size: 11px; color: var(--muted); padding: 6px 12px; }
-  .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-    padding: 0 20px 16px;
-  }
-  .toolbar input[type="text"], .toolbar select {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 13px;
-  }
-  .toolbar label.file-label {
-    font-size: 12px;
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  #convert-btn {
-    margin-left: auto;
-    background: var(--accent-blue);
-    border: none;
-    color: #001824;
-    padding: 8px 20px;
-    border-radius: 6px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  #convert-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  #status-msg { padding: 0 20px 10px; font-size: 13px; }
-  #status-msg.error { color: var(--danger); }
-  #status-msg.ok { color: var(--accent); }
-
-  /* Modales genéricos (auth) */
-  .modal-overlay {
-    display: none;
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.6);
-    align-items: center; justify-content: center;
-    z-index: 100;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 24px;
-    width: 320px;
-  }
-  .modal h2 { margin-top: 0; font-size: 16px; }
-  .modal input {
-    width: 100%;
-    padding: 8px 10px;
-    margin-bottom: 10px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 6px;
-  }
-  .modal button.primary {
-    width: 100%;
-    background: var(--accent);
-    border: none;
-    color: #06210c;
-    padding: 10px;
-    border-radius: 6px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  .modal .switch-link { font-size: 12px; color: var(--accent-blue); cursor: pointer; margin-top: 10px; display: inline-block; }
-  .modal .modal-error { color: var(--danger); font-size: 12px; min-height: 14px; margin-bottom: 6px; }
-  .modal .close-x { float: right; cursor: pointer; color: var(--muted); }
-
-  /* Overlay de upsell ("el caramelo") */
-  #upsell-blur {
-    filter: blur(5px);
-    pointer-events: none;
-    user-select: none;
-  }
-  #upsell-modal {
-    position: absolute; inset: 0;
-    display: none;
-    align-items: center; justify-content: center;
-    background: rgba(15,20,25,0.35);
-  }
-  #upsell-modal.open { display: flex; }
-  #upsell-modal .card {
-    background: var(--panel);
-    border: 1px solid var(--accent-blue);
-    border-radius: 10px;
-    padding: 24px;
-    max-width: 320px;
-    text-align: center;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-  }
-  #upsell-modal .card h3 { margin-top: 0; color: var(--accent-blue); }
-  #upsell-modal .card a.cta {
-    display: inline-block;
-    margin-top: 14px;
-    background: var(--accent-blue);
-    color: #001824;
-    padding: 10px 18px;
-    border-radius: 6px;
-    font-weight: 700;
-    text-decoration: none;
-  }
+  .pass-cell { background: #c6efce !important; color: #1a3d1a !important; }
+  .fail-cell { background: #ffc7ce !important; color: #5b1a1a !important; }
 </style>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
 
-<header>
-  <h1>MD2<span>Docx</span></h1>
-  <div id="auth-area">
-    <span id="tier-badge" style="display:none;"></span>
-    <span id="user-email" style="display:none; color: var(--muted);"></span>
-    <button id="btn-logout" class="secondary" style="display:none;">Salir</button>
-    <button id="btn-login" class="secondary">Entrar</button>
-    <button id="btn-signup">Crear cuenta</button>
+<!-- Warm-up banner (cold start de Render) -->
+<div id="warmup-banner" class="hidden bg-brand-blue/10 text-brand-blue text-xs text-center py-1.5 px-3">
+  <span data-i18n="warmup.message">Waking up the conversion engine — first request may take a few extra seconds…</span>
+</div>
+
+<header class="border-b border-slate-800">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-1 text-lg font-bold">
+      MD2<span class="text-brand-green">Docx</span>
+    </div>
+    <div class="flex items-center gap-2 text-sm">
+      <a href="#pricing" data-i18n="nav.pricing" class="hidden sm:inline text-slate-300 hover:text-white">Pricing</a>
+      <button id="lang-toggle" class="border border-slate-700 rounded px-2 py-1 text-xs font-semibold text-slate-300 hover:text-white hover:border-slate-500">EN</button>
+      <span id="user-email" class="hidden text-slate-400 text-xs"></span>
+      <button id="btn-app" class="hidden bg-brand-blue text-slate-950 font-semibold rounded px-3 py-1.5 text-xs" data-i18n="nav.myTemplates">My templates</button>
+      <button id="btn-logout" class="hidden border border-slate-700 rounded px-3 py-1.5 text-xs" data-i18n="nav.logout">Log out</button>
+      <button id="btn-login" class="border border-slate-700 rounded px-3 py-1.5 text-xs" data-i18n="nav.login">Log in</button>
+      <button id="btn-signup" class="bg-brand-green text-slate-950 font-semibold rounded px-3 py-1.5 text-xs" data-i18n="nav.signup">Sign up</button>
+    </div>
   </div>
 </header>
 
-<div class="toolbar">
-  <label class="file-label">Plantilla:
-    <select id="template-select">
-      <option value="none">Sin plantilla</option>
-      <!--TEMPLATE_OPTIONS-->
-    </select>
-  </label>
-  <input type="text" id="title-input" placeholder="Título (opcional)" />
-  <input type="text" id="author-input" placeholder="Autor (opcional)" />
-  <input type="text" id="filename-input" placeholder="nombre-fichero" value="documento" />
-  <label class="file-label">
-    Plantilla .docx propia:
-    <input type="file" id="custom-template-input" accept=".docx" />
-  </label>
-  <button id="convert-btn">Descargar DOCX</button>
-</div>
-<div id="status-msg"></div>
+<!-- ==================== LANDING ==================== -->
+<main id="landing-view">
 
-<main>
-  <div class="pane">
-    <div class="pane-title">Markdown</div>
-    <textarea id="editor" placeholder="# Escribe tu Markdown aquí..."></textarea>
-  </div>
-  <div class="pane">
-    <div class="pane-title">Vista previa (aproximada al resultado en Word)</div>
-    <div id="preview-wrap">
-      <div id="preview"></div>
-      <div id="upsell-modal">
-        <div class="card">
-          <h3>Documento con formato corporativo listo 🎉</h3>
-          <p id="upsell-message"></p>
-          <a id="upsell-cta" class="cta" href="#" target="_blank" rel="noopener">Pasar a Pro</a>
+  <!-- HERO: la herramienta misma -->
+  <section class="max-w-6xl mx-auto px-4 pt-6 pb-8">
+    <p class="text-brand-green text-xs font-semibold tracking-wide uppercase mb-2" data-i18n="hero.eyebrow">
+      Free forever · No signup · No tags, no JSON
+    </p>
+    <h1 class="text-2xl md:text-4xl font-extrabold leading-tight mb-2" data-i18n="hero.title">
+      Your Word template. No tags, no JSON, no code. Paste and download.
+    </h1>
+    <p class="text-slate-400 text-sm md:text-base mb-4 max-w-2xl" data-i18n="hero.subtitle">
+      Paste your Claude or ChatGPT answer below and get a clean, formatted .docx in seconds — free and unlimited, no account needed.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Editor pane: contiene textarea + botón, para que el CTA quede
+           visible sin scroll en mobile (antes que el preview). -->
+      <div class="order-1 flex flex-col gap-2">
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <label class="flex items-center gap-1 text-slate-400" data-i18n="hero.templateLabel">
+            Template:
+            <select id="template-select" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-100">
+              <option value="none" data-i18n="hero.templateNone">Clean default</option>
+              <!--TEMPLATE_OPTIONS-->
+            </select>
+          </label>
+          <input type="text" id="filename-input" value="documento"
+                 data-i18n-placeholder="hero.filenamePlaceholder"
+                 class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-100 w-28" />
+        </div>
+
+        <textarea id="editor" rows="9"
+          data-i18n-placeholder="hero.editorPlaceholder"
+          class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-mono text-sm text-slate-100 resize-none focus:outline-none focus:border-brand-green"></textarea>
+
+        <button id="convert-btn"
+          class="w-full md:w-auto self-start bg-brand-blue text-slate-950 font-bold rounded-lg px-6 py-3 text-sm hover:brightness-110"
+          data-i18n="hero.downloadBtn">
+          Download .docx
+        </button>
+        <p id="status-msg" class="text-xs min-h-[1rem]"></p>
+      </div>
+
+      <!-- Preview pane -->
+      <div class="order-2 flex flex-col gap-2">
+        <p class="text-xs text-slate-500" data-i18n="hero.previewLabel">Live preview (close to the final Word output)</p>
+        <div class="bg-slate-900 border border-slate-700 rounded-lg p-4 overflow-auto max-h-[420px]">
+          <div id="preview" class="prose prose-invert prose-sm max-w-none"></div>
         </div>
       </div>
     </div>
-    <div class="hint">Vista previa aproximada — el resultado final se genera en el servidor.</div>
-  </div>
+  </section>
+
+  <!-- Gancho de upgrade: mockup comparativo genérico vs. plantilla propia -->
+  <section class="max-w-6xl mx-auto px-4 py-10 border-t border-slate-800">
+    <h2 class="text-xl md:text-2xl font-bold text-center mb-2" data-i18n="compare.title">
+      Good enough to ship. Better with your own brand.
+    </h2>
+    <p class="text-slate-400 text-sm text-center max-w-xl mx-auto mb-8" data-i18n="compare.subtitle">
+      The free output already looks clean. Upload your corporate template once and every future document inherits it automatically.
+    </p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+      <div class="border border-slate-700 rounded-lg p-4">
+        <p class="text-xs font-semibold text-slate-400 mb-3" data-i18n="compare.genericLabel">GENERIC (free)</p>
+        <div class="h-3 w-2/3 bg-slate-700 rounded mb-3"></div>
+        <div class="h-2 w-full bg-slate-800 rounded mb-1.5"></div>
+        <div class="h-2 w-full bg-slate-800 rounded mb-1.5"></div>
+        <div class="h-2 w-5/6 bg-slate-800 rounded mb-3"></div>
+        <div class="h-2 w-1/2 bg-slate-700 rounded mb-1.5"></div>
+        <div class="h-2 w-full bg-slate-800 rounded"></div>
+      </div>
+      <div class="border-2 border-brand-green rounded-lg p-4 relative">
+        <span class="absolute -top-3 right-3 bg-brand-green text-slate-950 text-[10px] font-bold px-2 py-0.5 rounded-full" data-i18n="compare.proBadge">PRO</span>
+        <p class="text-xs font-semibold text-brand-green mb-3" data-i18n="compare.customLabel">WITH YOUR TEMPLATE</p>
+        <div class="h-3 w-2/3 bg-brand-green/70 rounded mb-3"></div>
+        <div class="h-2 w-full bg-slate-700 rounded mb-1.5"></div>
+        <div class="h-2 w-full bg-slate-700 rounded mb-1.5"></div>
+        <div class="h-2 w-5/6 bg-slate-700 rounded mb-3"></div>
+        <div class="h-2 w-1/2 bg-brand-blue/70 rounded mb-1.5"></div>
+        <div class="h-2 w-full bg-slate-700 rounded"></div>
+      </div>
+    </div>
+    <div class="text-center mt-6">
+      <button id="compare-cta" class="bg-brand-green text-slate-950 font-bold rounded-lg px-6 py-2.5 text-sm" data-i18n="compare.cta">
+        Upload your template — 1 download free
+      </button>
+    </div>
+  </section>
+
+  <!-- Casos de uso -->
+  <section class="max-w-6xl mx-auto px-4 py-10 border-t border-slate-800">
+    <h2 class="text-xl md:text-2xl font-bold text-center mb-8" data-i18n="usecases.title">Built for people who ship documents</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="border border-slate-800 rounded-lg p-5">
+        <h3 class="font-semibold mb-2" data-i18n="usecases.case1.title">Consultants</h3>
+        <p class="text-sm text-slate-400" data-i18n="usecases.case1.desc">Turn proposals and reports into documents that already look like your firm — no manual reformatting.</p>
+      </div>
+      <div class="border border-slate-800 rounded-lg p-5">
+        <h3 class="font-semibold mb-2" data-i18n="usecases.case2.title">QA &amp; technical reports</h3>
+        <p class="text-sm text-slate-400" data-i18n="usecases.case2.desc">Automatic Pass/Fail cell coloring in every results table, straight from your Markdown.</p>
+      </div>
+      <div class="border border-slate-800 rounded-lg p-5">
+        <h3 class="font-semibold mb-2" data-i18n="usecases.case3.title">Expert witnesses</h3>
+        <p class="text-sm text-slate-400" data-i18n="usecases.case3.desc">Generate signed-ready expert reports with your own letterhead, every time.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- API B2B -->
+  <section class="max-w-6xl mx-auto px-4 py-10 border-t border-slate-800">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+      <div>
+        <h2 class="text-xl md:text-2xl font-bold mb-2" data-i18n="api.title">Ship it inside your own product</h2>
+        <p class="text-slate-400 text-sm mb-4" data-i18n="api.desc">
+          A machine-to-machine endpoint authenticated with an API key. Drop it into CI/CD pipelines or your own SaaS.
+        </p>
+        <a href="mailto:hello@md2docx.app" class="inline-block bg-brand-blue text-slate-950 font-semibold rounded-lg px-5 py-2.5 text-sm" data-i18n="api.cta">Get API access</a>
+      </div>
+      <pre class="bg-slate-900 border border-slate-700 rounded-lg p-4 text-xs overflow-auto"><code>curl -X POST https://api.md2docx.app/api/v1/b2b/convert \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -F "markdown=# Report" \
+  -o report.docx</code></pre>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="max-w-6xl mx-auto px-4 py-10 border-t border-slate-800">
+    <h2 class="text-xl md:text-2xl font-bold text-center mb-8" data-i18n="pricing.title">Pricing</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="border border-slate-800 rounded-lg p-6 flex flex-col">
+        <h3 class="font-semibold" data-i18n="pricing.free.name">Free</h3>
+        <p class="text-3xl font-extrabold my-3" data-i18n="pricing.free.price">€0</p>
+        <p class="text-sm text-slate-400 mb-5 flex-1" data-i18n="pricing.free.desc">Unlimited conversions. No signup. Clean generic template.</p>
+        <a href="#hero" onclick="document.getElementById('editor').focus(); return false;" class="text-center border border-slate-700 rounded-lg px-4 py-2 text-sm font-semibold" data-i18n="pricing.free.cta">Start converting</a>
+      </div>
+      <div class="border-2 border-brand-green rounded-lg p-6 flex flex-col">
+        <h3 class="font-semibold text-brand-green" data-i18n="pricing.pro.name">Pro</h3>
+        <p class="text-3xl font-extrabold my-3" data-i18n="pricing.pro.price">€79 / year</p>
+        <p class="text-sm text-slate-400 mb-5 flex-1" data-i18n="pricing.pro.desc">Your own persistent template, style auto-mapping, conditional rules (Pass/Fail), 1 free trial download.</p>
+        <button id="pricing-pro-cta" class="bg-brand-green text-slate-950 font-bold rounded-lg px-4 py-2 text-sm" data-i18n="pricing.pro.cta">Upload your template</button>
+      </div>
+      <div class="border border-slate-800 rounded-lg p-6 flex flex-col">
+        <h3 class="font-semibold" data-i18n="pricing.api.name">API</h3>
+        <p class="text-3xl font-extrabold my-3" data-i18n="pricing.api.price">Metered</p>
+        <p class="text-sm text-slate-400 mb-5 flex-1" data-i18n="pricing.api.desc">Pay per conversion. Built for CI/CD and product integrations.</p>
+        <a href="mailto:hello@md2docx.app" class="text-center border border-slate-700 rounded-lg px-4 py-2 text-sm font-semibold" data-i18n="pricing.api.cta">Talk to us</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="max-w-6xl mx-auto px-4 py-8 border-t border-slate-800 text-xs text-slate-500 text-center" data-i18n="footer.tagline">
+    MD2Docx — paste Markdown, download Word. No tags, no JSON, no code.
+  </footer>
 </main>
 
+<!-- ==================== APP / WIZARD PRO (Fase 4) ==================== -->
+<main id="app-view" class="hidden max-w-3xl mx-auto px-4 py-8"></main>
+
 <!-- Modal de Login -->
-<div class="modal-overlay" id="login-overlay">
-  <div class="modal">
-    <span class="close-x" data-close="login-overlay">✕</span>
-    <h2>Iniciar sesión</h2>
-    <div class="modal-error" id="login-error"></div>
-    <input type="email" id="login-email" placeholder="Email" />
-    <input type="password" id="login-password" placeholder="Contraseña" />
-    <button class="primary" id="login-submit">Entrar</button>
-    <span class="switch-link" data-switch="signup-overlay" data-close="login-overlay">¿No tienes cuenta? Regístrate</span>
+<div id="login-overlay" class="hidden fixed inset-0 bg-black/60 items-center justify-center z-50 px-4">
+  <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-sm">
+    <div class="flex justify-between items-start mb-3">
+      <h2 class="font-semibold" data-i18n="auth.loginTitle">Log in</h2>
+      <span class="close-x cursor-pointer text-slate-500" data-close="login-overlay">✕</span>
+    </div>
+    <div id="login-error" class="text-red-400 text-xs min-h-[1rem] mb-2"></div>
+    <input type="email" id="login-email" data-i18n-placeholder="auth.emailPlaceholder" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 mb-2 text-sm" />
+    <input type="password" id="login-password" data-i18n-placeholder="auth.passwordPlaceholder" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 mb-3 text-sm" />
+    <button id="login-submit" class="w-full bg-brand-green text-slate-950 font-bold rounded px-3 py-2 text-sm" data-i18n="auth.loginSubmit">Log in</button>
+    <p class="text-xs text-brand-blue mt-3 cursor-pointer switch-link" data-switch="signup-overlay" data-close="login-overlay" data-i18n="auth.switchToSignup">No account? Sign up</p>
   </div>
 </div>
 
 <!-- Modal de Signup -->
-<div class="modal-overlay" id="signup-overlay">
-  <div class="modal">
-    <span class="close-x" data-close="signup-overlay">✕</span>
-    <h2>Crear cuenta</h2>
-    <div class="modal-error" id="signup-error"></div>
-    <input type="email" id="signup-email" placeholder="Email" />
-    <input type="password" id="signup-password" placeholder="Contraseña (mín. 6 caracteres)" />
-    <button class="primary" id="signup-submit">Crear cuenta</button>
-    <span class="switch-link" data-switch="login-overlay" data-close="signup-overlay">¿Ya tienes cuenta? Entra</span>
+<div id="signup-overlay" class="hidden fixed inset-0 bg-black/60 items-center justify-center z-50 px-4">
+  <div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-sm">
+    <div class="flex justify-between items-start mb-3">
+      <h2 class="font-semibold" data-i18n="auth.signupTitle">Create account</h2>
+      <span class="close-x cursor-pointer text-slate-500" data-close="signup-overlay">✕</span>
+    </div>
+    <div id="signup-error" class="text-red-400 text-xs min-h-[1rem] mb-2"></div>
+    <input type="email" id="signup-email" data-i18n-placeholder="auth.emailPlaceholder" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 mb-2 text-sm" />
+    <input type="password" id="signup-password" data-i18n-placeholder="auth.passwordPlaceholderMin" class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 mb-3 text-sm" />
+    <button id="signup-submit" class="w-full bg-brand-green text-slate-950 font-bold rounded px-3 py-2 text-sm" data-i18n="auth.signupSubmit">Create account</button>
+    <p class="text-xs text-brand-blue mt-3 cursor-pointer switch-link" data-switch="login-overlay" data-close="signup-overlay" data-i18n="auth.switchToLogin">Already have an account? Log in</p>
   </div>
 </div>
 
 <script>
-const SUPABASE_URL = "__SUPABASE_URL__";
-const SUPABASE_ANON_KEY = "__SUPABASE_ANON_KEY__";
-const API_BASE_URL = "__API_BASE_URL__" || "";
+const CONFIG = {
+  SUPABASE_URL: "__SUPABASE_URL__",
+  SUPABASE_ANON_KEY: "__SUPABASE_ANON_KEY__",
+  API_BASE_URL: "__API_BASE_URL__" || "",
+};
 
-const supabaseClient = (SUPABASE_URL && SUPABASE_ANON_KEY)
-  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+const I18N = {
+  en: {
+    warmup: { message: "Waking up the conversion engine — first request may take a few extra seconds…" },
+    nav: { pricing: "Pricing", login: "Log in", signup: "Sign up", logout: "Log out", myTemplates: "My templates" },
+    hero: {
+      eyebrow: "Free forever · No signup · No tags, no JSON",
+      title: "Your Word template. No tags, no JSON, no code. Paste and download.",
+      subtitle: "Paste your Claude or ChatGPT answer below and get a clean, formatted .docx in seconds — free and unlimited, no account needed.",
+      templateLabel: "Template:",
+      templateNone: "Clean default",
+      filenamePlaceholder: "file-name",
+      editorPlaceholder: "# Paste your Markdown here...",
+      downloadBtn: "Download .docx",
+      converting: "Converting…",
+      downloaded: "Document downloaded ✔",
+      previewLabel: "Live preview (close to the final Word output)",
+    },
+    compare: {
+      title: "Good enough to ship. Better with your own brand.",
+      subtitle: "The free output already looks clean. Upload your corporate template once and every future document inherits it automatically.",
+      genericLabel: "GENERIC (free)",
+      customLabel: "WITH YOUR TEMPLATE",
+      proBadge: "PRO",
+      cta: "Upload your template — 1 download free",
+    },
+    usecases: {
+      title: "Built for people who ship documents",
+      case1: { title: "Consultants", desc: "Turn proposals and reports into documents that already look like your firm — no manual reformatting." },
+      case2: { title: "QA & technical reports", desc: "Automatic Pass/Fail cell coloring in every results table, straight from your Markdown." },
+      case3: { title: "Expert witnesses", desc: "Generate signed-ready expert reports with your own letterhead, every time." },
+    },
+    api: {
+      title: "Ship it inside your own product",
+      desc: "A machine-to-machine endpoint authenticated with an API key. Drop it into CI/CD pipelines or your own SaaS.",
+      cta: "Get API access",
+    },
+    pricing: {
+      title: "Pricing",
+      free: { name: "Free", price: "€0", desc: "Unlimited conversions. No signup. Clean generic template.", cta: "Start converting" },
+      pro: { name: "Pro", price: "€79 / year", desc: "Your own persistent template, style auto-mapping, conditional rules (Pass/Fail), 1 free trial download.", cta: "Upload your template" },
+      api: { name: "API", price: "Metered", desc: "Pay per conversion. Built for CI/CD and product integrations.", cta: "Talk to us" },
+    },
+    footer: { tagline: "MD2Docx — paste Markdown, download Word. No tags, no JSON, no code." },
+    auth: {
+      loginTitle: "Log in", signupTitle: "Create account",
+      emailPlaceholder: "Email", passwordPlaceholder: "Password", passwordPlaceholderMin: "Password (min. 6 characters)",
+      loginSubmit: "Log in", signupSubmit: "Create account",
+      switchToSignup: "No account? Sign up", switchToLogin: "Already have an account? Log in",
+      accountCreated: "Account created. Check your email to confirm (if required).",
+      notConfigured: "Supabase isn't configured yet.",
+    },
+    wizard: {
+      title: "Your corporate template",
+      backToLanding: "← Back to home",
+      myTemplatesTitle: "Your templates",
+      noTemplates: "You haven't uploaded a template yet.",
+      newTemplateBtn: "Upload a new template",
+      useBtn: "Use this template",
+      deleteBtn: "Delete",
+      step1Title: "Step 1 — Upload your .dotx/.docx",
+      step1Desc: "We store it as-is, nothing is modified.",
+      nameLabel: "Template name",
+      uploadBtn: "Upload",
+      step2Title: "Step 2 — Style mapping",
+      step2Desc: "We tried to auto-detect your styles. Adjust anything that's wrong or missing — this always has a manual fallback.",
+      mappingHeading1: "Heading 1 style",
+      mappingHeading2: "Heading 2 style",
+      mappingHeading3: "Heading 3 style",
+      mappingTable: "Table style",
+      notDetected: "— not detected, pick one —",
+      saveMappingBtn: "Save mapping & continue",
+      step3Title: "Step 3 — Test conversion",
+      step3Desc: "Paste some Markdown and generate a real .docx with your template.",
+      convertBtn: "Convert with my template",
+      trialNote: "Free plan: your first download with a custom template is free. After that, upgrading to Pro is required.",
+      trialUsedTitle: "You already used your free trial",
+      upgradeMessage: "Upgrade to Pro for unlimited downloads with your own template.",
+      upgradeCta: "Upgrade to Pro",
+      convertedOk: "Document downloaded — this was your free trial download.",
+      convertedOkPro: "Document downloaded ✔",
+    },
+  },
+  es: {
+    warmup: { message: "Despertando el motor de conversión — la primera petición puede tardar unos segundos más…" },
+    nav: { pricing: "Precios", login: "Entrar", signup: "Crear cuenta", logout: "Salir", myTemplates: "Mis plantillas" },
+    hero: {
+      eyebrow: "Gratis para siempre · Sin registro · Sin tags, sin JSON",
+      title: "Tu plantilla de Word. Sin tags, sin JSON, sin código. Pega y descarga.",
+      subtitle: "Pega aquí tu respuesta de Claude o ChatGPT y consigue un .docx limpio y formateado en segundos — gratis e ilimitado, sin cuenta.",
+      templateLabel: "Plantilla:",
+      templateNone: "Genérica limpia",
+      filenamePlaceholder: "nombre-fichero",
+      editorPlaceholder: "# Pega aquí tu Markdown...",
+      downloadBtn: "Descargar .docx",
+      converting: "Convirtiendo…",
+      downloaded: "Documento descargado ✔",
+      previewLabel: "Vista previa en vivo (aproximada al resultado en Word)",
+    },
+    compare: {
+      title: "Listo para usar tal cual. Mejor con tu propia marca.",
+      subtitle: "El resultado gratuito ya es limpio. Sube tu plantilla corporativa una vez y cada documento futuro la hereda automáticamente.",
+      genericLabel: "GENÉRICO (gratis)",
+      customLabel: "CON TU PLANTILLA",
+      proBadge: "PRO",
+      cta: "Sube tu plantilla — 1 descarga gratis",
+    },
+    usecases: {
+      title: "Pensado para quien entrega documentos",
+      case1: { title: "Consultores", desc: "Convierte propuestas e informes en documentos con el look de tu consultora, sin reformatear a mano." },
+      case2: { title: "QA / informes técnicos", desc: "Coloreado automático Pass/Fail en cada tabla de resultados, directo desde tu Markdown." },
+      case3: { title: "Peritos", desc: "Genera informes periciales con tu membrete corporativo, listos para firmar, cada vez." },
+    },
+    api: {
+      title: "Intégralo en tu propio producto",
+      desc: "Un endpoint máquina a máquina autenticado con una API key. Para pipelines de CI/CD o tu propio SaaS.",
+      cta: "Solicitar acceso API",
+    },
+    pricing: {
+      title: "Precios",
+      free: { name: "Free", price: "0€", desc: "Conversiones ilimitadas. Sin registro. Plantilla genérica limpia.", cta: "Empezar a convertir" },
+      pro: { name: "Pro", price: "79€ / año", desc: "Tu propia plantilla persistente, auto-mapeo de estilos, reglas condicionales (Pass/Fail), 1 descarga de prueba gratis.", cta: "Sube tu plantilla" },
+      api: { name: "API", price: "Por uso", desc: "Pago por conversión. Pensado para CI/CD e integraciones de producto.", cta: "Hablemos" },
+    },
+    footer: { tagline: "MD2Docx — pega Markdown, descarga Word. Sin tags, sin JSON, sin código." },
+    auth: {
+      loginTitle: "Iniciar sesión", signupTitle: "Crear cuenta",
+      emailPlaceholder: "Email", passwordPlaceholder: "Contraseña", passwordPlaceholderMin: "Contraseña (mín. 6 caracteres)",
+      loginSubmit: "Entrar", signupSubmit: "Crear cuenta",
+      switchToSignup: "¿No tienes cuenta? Regístrate", switchToLogin: "¿Ya tienes cuenta? Entra",
+      accountCreated: "Cuenta creada. Revisa tu email para confirmar (si aplica).",
+      notConfigured: "Supabase no está configurado todavía.",
+    },
+    wizard: {
+      title: "Tu plantilla corporativa",
+      backToLanding: "← Volver al inicio",
+      myTemplatesTitle: "Tus plantillas",
+      noTemplates: "Todavía no has subido ninguna plantilla.",
+      newTemplateBtn: "Subir una plantilla nueva",
+      useBtn: "Usar esta plantilla",
+      deleteBtn: "Borrar",
+      step1Title: "Paso 1 — Sube tu .dotx/.docx",
+      step1Desc: "La guardamos tal cual, sin modificarla.",
+      nameLabel: "Nombre de la plantilla",
+      uploadBtn: "Subir",
+      step2Title: "Paso 2 — Mapeo de estilos",
+      step2Desc: "Intentamos detectar tus estilos automáticamente. Ajusta lo que falte o esté mal — siempre hay un fallback manual.",
+      mappingHeading1: "Estilo para Heading 1",
+      mappingHeading2: "Estilo para Heading 2",
+      mappingHeading3: "Estilo para Heading 3",
+      mappingTable: "Estilo de tabla",
+      notDetected: "— sin detectar, elige uno —",
+      saveMappingBtn: "Guardar mapeo y continuar",
+      step3Title: "Paso 3 — Conversión de prueba",
+      step3Desc: "Pega algo de Markdown y genera un .docx real con tu plantilla.",
+      convertBtn: "Convertir con mi plantilla",
+      trialNote: "Plan free: tu primera descarga con plantilla propia es gratis. Después, hace falta Pro.",
+      trialUsedTitle: "Ya usaste tu prueba gratuita",
+      upgradeMessage: "Hazte Pro para descargas ilimitadas con tu propia plantilla.",
+      upgradeCta: "Hazte Pro",
+      convertedOk: "Documento descargado — esta era tu descarga de prueba gratuita.",
+      convertedOkPro: "Documento descargado ✔",
+    },
+  },
+};
+
+const state = {
+  lang: localStorage.getItem("md2docx_lang") || "en",
+  session: null,
+};
+
+function t(key) {
+  const parts = key.split(".");
+  let obj = I18N[state.lang];
+  for (const p of parts) obj = obj?.[p];
+  return obj ?? key;
+}
+
+function applyI18n() {
+  document.documentElement.lang = state.lang;
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.getElementById("lang-toggle").textContent = state.lang === "en" ? "ES" : "EN";
+}
+
+document.getElementById("lang-toggle").addEventListener("click", () => {
+  state.lang = state.lang === "en" ? "es" : "en";
+  localStorage.setItem("md2docx_lang", state.lang);
+  applyI18n();
+  renderPreview();
+});
+
+applyI18n();
 
 // ---------------------------------------------------------------------
-// Editor + preview (réplica ligera de la lógica Pass/Fail del builder)
+// Warm-up ping (mitiga cold start de Render): no bloquea el uso del hero.
+// ---------------------------------------------------------------------
+(function warmup() {
+  const banner = document.getElementById("warmup-banner");
+  const timer = setTimeout(() => banner.classList.remove("hidden"), 800);
+  fetch(`${CONFIG.API_BASE_URL}/healthz`)
+    .catch(() => {})
+    .finally(() => {
+      clearTimeout(timer);
+      banner.classList.add("hidden");
+    });
+})();
+
+// ---------------------------------------------------------------------
+// Supabase client
+// ---------------------------------------------------------------------
+const supabaseClient = (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY)
+  ? supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY)
+  : null;
+
+async function getAuthHeader() {
+  if (!supabaseClient) return {};
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  return session ? { Authorization: `Bearer ${session.access_token}` } : {};
+}
+
+// ---------------------------------------------------------------------
+// Editor + preview
 // ---------------------------------------------------------------------
 const editor = document.getElementById("editor");
 const preview = document.getElementById("preview");
@@ -313,17 +488,17 @@ function stripFrontmatter(md) {
 function colorizePassFail(root) {
   root.querySelectorAll("td").forEach((td) => {
     const upper = td.textContent.trim().toUpperCase();
+    td.classList.remove("pass-cell", "fail-cell");
     if (upper.startsWith("PASS") || upper === "OK" || upper === "✓") {
-      td.style.background = "#c6efce"; td.style.color = "#1a3d1a";
+      td.classList.add("pass-cell");
     } else if (upper.startsWith("FAIL") || upper === "KO" || upper === "NOK" || upper === "✗") {
-      td.style.background = "#ffc7ce"; td.style.color = "#5b1a1a";
+      td.classList.add("fail-cell");
     }
   });
 }
 
 function renderPreview() {
-  const html = marked.parse(stripFrontmatter(editor.value || ""));
-  preview.innerHTML = html;
+  preview.innerHTML = marked.parse(stripFrontmatter(editor.value || ""));
   colorizePassFail(preview);
 }
 
@@ -331,9 +506,6 @@ editor.addEventListener("input", () => {
   clearTimeout(previewTimer);
   previewTimer = setTimeout(renderPreview, 150);
 });
-renderPreview();
-
-// Drag & drop de .md
 editor.addEventListener("dragover", (e) => e.preventDefault());
 editor.addEventListener("drop", (e) => {
   e.preventDefault();
@@ -343,39 +515,47 @@ editor.addEventListener("drop", (e) => {
   reader.onload = () => { editor.value = reader.result; renderPreview(); };
   reader.readAsText(f);
 });
+renderPreview();
 
 // ---------------------------------------------------------------------
 // Auth: modales + estado de sesión
 // ---------------------------------------------------------------------
-const els = {
-  loginOverlay: document.getElementById("login-overlay"),
-  signupOverlay: document.getElementById("signup-overlay"),
-  btnLogin: document.getElementById("btn-login"),
-  btnSignup: document.getElementById("btn-signup"),
-  btnLogout: document.getElementById("btn-logout"),
-  userEmail: document.getElementById("user-email"),
-  tierBadge: document.getElementById("tier-badge"),
-};
-
 document.querySelectorAll("[data-close]").forEach((el) => {
-  el.addEventListener("click", (e) => {
-    document.getElementById(el.dataset.close).classList.remove("open");
-    if (el.dataset.switch) document.getElementById(el.dataset.switch).classList.add("open");
+  el.addEventListener("click", () => {
+    document.getElementById(el.dataset.close).classList.add("hidden");
+    document.getElementById(el.dataset.close).classList.remove("flex");
+    if (el.dataset.switch) {
+      document.getElementById(el.dataset.switch).classList.remove("hidden");
+      document.getElementById(el.dataset.switch).classList.add("flex");
+    }
   });
 });
 
-els.btnLogin.addEventListener("click", () => els.loginOverlay.classList.add("open"));
-els.btnSignup.addEventListener("click", () => els.signupOverlay.classList.add("open"));
+function openModal(id) {
+  const el = document.getElementById(id);
+  el.classList.remove("hidden");
+  el.classList.add("flex");
+}
+
+document.getElementById("btn-login").addEventListener("click", () => openModal("login-overlay"));
+document.getElementById("btn-signup").addEventListener("click", () => openModal("signup-overlay"));
+document.getElementById("compare-cta").addEventListener("click", () => {
+  if (state.session) { showApp(); } else { openModal("signup-overlay"); }
+});
+document.getElementById("pricing-pro-cta").addEventListener("click", () => {
+  if (state.session) { showApp(); } else { openModal("signup-overlay"); }
+});
 
 document.getElementById("login-submit").addEventListener("click", async () => {
   const email = document.getElementById("login-email").value.trim();
   const password = document.getElementById("login-password").value;
   const errorEl = document.getElementById("login-error");
   errorEl.textContent = "";
-  if (!supabaseClient) { errorEl.textContent = "Supabase no está configurado."; return; }
+  if (!supabaseClient) { errorEl.textContent = t("auth.notConfigured"); return; }
   const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) { errorEl.textContent = error.message; return; }
-  els.loginOverlay.classList.remove("open");
+  document.getElementById("login-overlay").classList.add("hidden");
+  document.getElementById("login-overlay").classList.remove("flex");
 });
 
 document.getElementById("signup-submit").addEventListener("click", async () => {
@@ -383,36 +563,30 @@ document.getElementById("signup-submit").addEventListener("click", async () => {
   const password = document.getElementById("signup-password").value;
   const errorEl = document.getElementById("signup-error");
   errorEl.textContent = "";
-  if (!supabaseClient) { errorEl.textContent = "Supabase no está configurado."; return; }
+  if (!supabaseClient) { errorEl.textContent = t("auth.notConfigured"); return; }
   const { error } = await supabaseClient.auth.signUp({ email, password });
   if (error) { errorEl.textContent = error.message; return; }
-  errorEl.style.color = "var(--accent)";
-  errorEl.textContent = "Cuenta creada. Revisa tu email para confirmar (si aplica).";
+  errorEl.classList.remove("text-red-400");
+  errorEl.classList.add("text-brand-green");
+  errorEl.textContent = t("auth.accountCreated");
 });
 
-els.btnLogout.addEventListener("click", async () => {
+document.getElementById("btn-logout").addEventListener("click", async () => {
   if (supabaseClient) await supabaseClient.auth.signOut();
+  showLanding();
 });
 
 async function refreshAuthUI() {
   if (!supabaseClient) return;
   const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) {
-    els.userEmail.style.display = "inline";
-    els.userEmail.textContent = session.user.email;
-    els.btnLogout.style.display = "inline-block";
-    els.btnLogin.style.display = "none";
-    els.btnSignup.style.display = "none";
-    const tier = session.user.user_metadata?.tier || "free";
-    els.tierBadge.style.display = "inline-block";
-    els.tierBadge.textContent = tier;
-  } else {
-    els.userEmail.style.display = "none";
-    els.btnLogout.style.display = "none";
-    els.btnLogin.style.display = "inline-block";
-    els.btnSignup.style.display = "inline-block";
-    els.tierBadge.style.display = "none";
-  }
+  state.session = session;
+  const loggedIn = Boolean(session);
+  document.getElementById("user-email").classList.toggle("hidden", !loggedIn);
+  document.getElementById("user-email").textContent = loggedIn ? session.user.email : "";
+  document.getElementById("btn-logout").classList.toggle("hidden", !loggedIn);
+  document.getElementById("btn-app").classList.toggle("hidden", !loggedIn);
+  document.getElementById("btn-login").classList.toggle("hidden", loggedIn);
+  document.getElementById("btn-signup").classList.toggle("hidden", loggedIn);
 }
 
 if (supabaseClient) {
@@ -420,79 +594,48 @@ if (supabaseClient) {
   refreshAuthUI();
 }
 
-async function getAuthHeader() {
-  if (!supabaseClient) return {};
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  return session ? { Authorization: `Bearer ${session.access_token}` } : {};
+// ---------------------------------------------------------------------
+// Vista landing <-> app (Pro dashboard, ver wizard en app.js embebido)
+// ---------------------------------------------------------------------
+function showLanding() {
+  document.getElementById("landing-view").classList.remove("hidden");
+  document.getElementById("app-view").classList.add("hidden");
 }
 
+function showApp() {
+  document.getElementById("landing-view").classList.add("hidden");
+  document.getElementById("app-view").classList.remove("hidden");
+  if (window.renderWizard) window.renderWizard();
+}
+
+document.getElementById("btn-app").addEventListener("click", showApp);
+
 // ---------------------------------------------------------------------
-// Conversión + lógica del "caramelo" (upsell en 402)
+// Conversión genérica (pública, sin login, sin límite de negocio)
 // ---------------------------------------------------------------------
 const statusMsg = document.getElementById("status-msg");
 const convertBtn = document.getElementById("convert-btn");
-const upsellModal = document.getElementById("upsell-modal");
-const upsellMessage = document.getElementById("upsell-message");
-const upsellCta = document.getElementById("upsell-cta");
-const previewWrap = document.getElementById("preview-wrap");
 
 function setStatus(text, kind) {
   statusMsg.textContent = text || "";
-  statusMsg.className = kind || "";
-}
-
-function closeUpsell() {
-  upsellModal.classList.remove("open");
-  preview.classList.remove("upsell-blur");
-  preview.id = "preview";
+  statusMsg.className = "text-xs min-h-[1rem] " + (kind === "error" ? "text-red-400" : kind === "ok" ? "text-brand-green" : "text-slate-400");
 }
 
 convertBtn.addEventListener("click", async () => {
-  setStatus("Convirtiendo…");
-  closeUpsell();
-  preview.removeAttribute("id");
-  preview.id = "preview";
-
+  setStatus(t("hero.converting"));
   const formData = new FormData();
   formData.append("markdown", editor.value || "");
   formData.append("template", document.getElementById("template-select").value);
-  formData.append("title", document.getElementById("title-input").value);
-  formData.append("author", document.getElementById("author-input").value);
   formData.append("filename", document.getElementById("filename-input").value || "documento");
 
-  const customTemplateFile = document.getElementById("custom-template-input").files[0];
-  if (customTemplateFile) formData.append("template_file", customTemplateFile);
-
   try {
-    const headers = await getAuthHeader();
-    const resp = await fetch(`${API_BASE_URL}/api/convert`, {
-      method: "POST",
-      headers,
-      body: formData,
-    });
-
-    if (resp.status === 402) {
-      const payload = await resp.json();
-      preview.id = "upsell-blur";
-      upsellMessage.textContent = payload.preview_text || payload.message;
-      upsellCta.href = payload.checkout_url || "#";
-      upsellModal.classList.add("open");
-      setStatus("Plantilla personalizada procesada — hazte Pro para descargarla.", "");
-      return;
-    }
+    const resp = await fetch(`${CONFIG.API_BASE_URL}/api/convert`, { method: "POST", body: formData });
 
     if (resp.status === 429) {
       const payload = await resp.json().catch(() => ({}));
-      setStatus(payload.detail || "Límite de conversiones gratuitas alcanzado. Vuelve en unos días o hazte Pro.", "error");
+      setStatus(payload.detail || payload.message || "Rate limited, try again shortly.", "error");
       return;
     }
-
-    if (resp.status === 403) {
-      const payload = await resp.json().catch(() => ({}));
-      setStatus(payload.detail || "Acceso bloqueado por actividad sospechosa.", "error");
-      return;
-    }
-
     if (!resp.ok) {
       const payload = await resp.json().catch(() => ({}));
       setStatus(payload.detail || payload.error || `Error ${resp.status}`, "error");
@@ -508,9 +651,9 @@ convertBtn.addEventListener("click", async () => {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    setStatus("Documento descargado ✔", "ok");
+    setStatus(t("hero.downloaded"), "ok");
   } catch (err) {
-    setStatus(`Error de red: ${err.message}`, "error");
+    setStatus(`${err.message}`, "error");
   }
 });
 </script>
