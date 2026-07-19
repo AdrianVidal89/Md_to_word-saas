@@ -26,7 +26,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
-from auth import check_ip_rate_limit, get_client_ip, log_conversion, require_api_key
+from auth import check_ip_rate_limit, get_client_ip, log_conversion, require_api_key, require_user
 from converter import build_docx, list_templates, parse, resolve_template
 from models import AuthenticatedUser
 from pro_templates import router as pro_templates_router
@@ -82,6 +82,13 @@ async def healthz():
     para mitigar el cold start del free tier de Render (spin-down tras
     inactividad)."""
     return JSONResponse({"status": "ok"})
+
+
+@app.get("/api/me", response_model=AuthenticatedUser)
+async def get_me(user: AuthenticatedUser = Depends(require_user)):
+    """El tier real vive en public.users.tier, no en el JWT de Supabase Auth
+    — el frontend usa esto para mostrar el badge de tier correctamente."""
+    return user
 
 
 # --------------------------------------------------------------------------

@@ -47,6 +47,7 @@
     <div class="flex items-center gap-2 text-sm">
       <a href="#pricing" data-i18n="nav.pricing" class="hidden sm:inline text-slate-300 hover:text-white">Pricing</a>
       <button id="lang-toggle" class="border border-slate-700 rounded px-2 py-1 text-xs font-semibold text-slate-300 hover:text-white hover:border-slate-500">EN</button>
+      <span id="tier-badge" class="hidden border border-brand-blue text-brand-blue rounded-full px-2 py-0.5 text-[10px] font-bold uppercase"></span>
       <span id="user-email" class="hidden text-slate-400 text-xs"></span>
       <button id="btn-app" class="hidden bg-brand-blue text-slate-950 font-semibold rounded px-3 py-1.5 text-xs" data-i18n="nav.myTemplates">My templates</button>
       <button id="btn-logout" class="hidden border border-slate-700 rounded px-3 py-1.5 text-xs" data-i18n="nav.logout">Log out</button>
@@ -606,6 +607,24 @@ async function refreshAuthUI() {
   document.getElementById("btn-app").classList.toggle("hidden", !loggedIn);
   document.getElementById("btn-login").classList.toggle("hidden", loggedIn);
   document.getElementById("btn-signup").classList.toggle("hidden", loggedIn);
+
+  const badge = document.getElementById("tier-badge");
+  if (!loggedIn) {
+    badge.classList.add("hidden");
+    return;
+  }
+  // El tier real vive en public.users.tier (backend), no en el JWT.
+  try {
+    const headers = await getAuthHeader();
+    const resp = await fetch(`${CONFIG.API_BASE_URL}/api/me`, { headers });
+    if (resp.ok) {
+      const me = await resp.json();
+      badge.textContent = me.tier;
+      badge.classList.remove("hidden");
+    }
+  } catch (err) {
+    badge.classList.add("hidden");
+  }
 }
 
 if (supabaseClient) {
