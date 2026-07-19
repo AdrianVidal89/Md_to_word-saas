@@ -1,4 +1,4 @@
-/* Formalize — lógica compartida entre home/pricing/api-access:
+/* AI to Word — lógica compartida entre home/pricing/api-access:
    i18n, sesión de Supabase (con guardas defensivas: un fallo de CDN nunca
    debe romper el resto de la página), y los modales de login/signup. */
 
@@ -9,7 +9,7 @@ const I18N = {
     hero: {
       eyebrow: "Free forever · No signup · No tags, no JSON",
       title: "Your Word template. No tags, no JSON, no code. Paste and download.",
-      subtitle: "Paste your Claude or ChatGPT answer below and get a clean, formatted .docx in seconds — free and unlimited, no account needed.",
+      subtitle: "Paste your AI's answer below and get a clean, formatted Word document in seconds — free and unlimited, no account needed.",
       templateLabel: "Template:",
       templateNone: "Clean default",
       filenamePlaceholder: "file-name",
@@ -19,6 +19,7 @@ const I18N = {
       downloadBtn: "Download .docx",
       converting: "Converting…",
       downloaded: "Document downloaded ✔",
+      buildingTitle: "Building your document…",
     },
     compare: {
       title: "Good enough to ship. Better with your own brand.",
@@ -29,17 +30,36 @@ const I18N = {
       cta: "Upload your template — 1 download free",
     },
     usecases: {
-      title: "Built for people who ship documents",
-      case1: { title: "Consultants", desc: "Turn proposals and reports into documents that already look like your firm — no manual reformatting." },
-      case2: { title: "QA & technical reports", desc: "Automatic Pass/Fail cell coloring in every results table, straight from your Markdown." },
-      case3: { title: "Expert witnesses", desc: "Generate signed-ready expert reports with your own letterhead, every time." },
+      title: "Built for professionals in any sector",
+      subtitle: "From a student assignment to a technical report at work — if your AI can write it, we can turn it into Word.",
+      case1: { title: "University assignments", desc: "Turn your AI-drafted essay or thesis chapter into a properly formatted document your professor will accept." },
+      case2: { title: "Engineering & functional specs", desc: "Structured specs and technical documentation, with tables and headings, ready to share with your team." },
+      case3: { title: "QA & technical reports", desc: "Automatic Pass/Fail cell coloring in every results table, straight from your Markdown." },
+    },
+    promptDemo: {
+      title: "Not sure what to ask your AI?",
+      subtitle: "Copy this prompt, paste it into your AI, then drop the answer above.",
+      promptLines: [
+        "Write a formal report about: <your topic here>",
+        "",
+        "Structure it like this:",
+        "- A title (H1) and a short introduction",
+        "- 2 to 4 sections with clear H2 headings",
+        "- Short paragraphs — no walls of text",
+        "- At least one table if there's data to compare",
+        "- A short conclusion at the end",
+        "",
+        "Format the answer in Markdown (#, ##, tables) so it converts cleanly.",
+      ],
+      copyBtn: "Copy prompt",
+      copiedBtn: "Copied ✔",
     },
     apiTeaser: {
       title: "Ship it inside your own product",
       desc: "A machine-to-machine endpoint authenticated with an API key. Drop it into CI/CD pipelines or your own SaaS.",
       cta: "See API docs",
     },
-    footer: { tagline: "Formalize — paste Markdown, download Word. No tags, no JSON, no code." },
+    footer: { tagline: "AI to Word — paste your AI's answer, download Word. No tags, no JSON, no code." },
     auth: {
       loginTitle: "Log in", signupTitle: "Create account",
       emailPlaceholder: "Email", passwordPlaceholder: "Password", passwordPlaceholderMin: "Password (min. 6 characters)",
@@ -56,6 +76,10 @@ const I18N = {
       newTemplateBtn: "Upload a new template",
       useBtn: "Use this template",
       deleteBtn: "Delete",
+      studioLabel: "Template studio",
+      stepUpload: "Upload",
+      stepMap: "Map styles",
+      stepConvert: "Convert",
       step1Title: "Step 1 — Upload your .dotx/.docx",
       step1Desc: "We store it as-is, nothing is modified.",
       nameLabel: "Template name",
@@ -85,16 +109,16 @@ const I18N = {
       free: { name: "Free", price: "€0", period: "forever", desc: "The lead magnet — better than the other free converters out there.",
         f1: "Unlimited conversions", f2: "No signup required", f3: "Clean generic template", f4: "Pass/Fail table coloring",
         cta: "Start converting" },
-      pro: { name: "Pro", price: "€79", period: "/ year", desc: "For anyone who needs their own corporate template.",
+      pro: { name: "Pro", price: "€3.99", period: "/ month", desc: "Less than a coffee a month — for your own corporate template.",
         f1: "Persistent custom .dotx/.docx template", f2: "Automatic style mapping (with manual fallback)", f3: "Conditional rules (Pass/Fail)", f4: "1 free trial download before you pay",
-        cta: "Upload your template" },
+        cta: "Upload your template", currentPlan: "Your current plan" },
       api: { name: "API", price: "Pay per use", period: "", desc: "For CI/CD pipelines and product integrations.",
         f1: "Machine-to-machine endpoint", f2: "Authenticated with an API key", f3: "No per-seat pricing", f4: "Built for automation",
         cta: "Talk to us" },
       faqTitle: "Questions",
       faq1q: "Is the free plan really unlimited?", faq1a: "Yes. It's rate-limited per IP only to stop abuse scripts, never to limit a real person.",
       faq2q: "What happens after my 1 free Pro download?", faq2a: "You'll see a clear upgrade prompt — never a blurred or fake preview. The first download is always the real, complete file.",
-      faq3q: "Can I cancel anytime?", faq3a: "Yes, Pro is billed yearly with no lock-in beyond the current period.",
+      faq3q: "Can I cancel anytime?", faq3a: "Yes. Pro is billed monthly, cancel whenever you want — no lock-in.",
     },
     api: {
       title: "Build document generation into your product",
@@ -125,7 +149,7 @@ const I18N = {
     hero: {
       eyebrow: "Gratis para siempre · Sin registro · Sin tags, sin JSON",
       title: "Tu plantilla de Word. Sin tags, sin JSON, sin código. Pega y descarga.",
-      subtitle: "Pega aquí tu respuesta de Claude o ChatGPT y consigue un .docx limpio y formateado en segundos — gratis e ilimitado, sin cuenta.",
+      subtitle: "Pega aquí la respuesta de tu IA y consigue un documento Word limpio y formateado en segundos — gratis e ilimitado, sin cuenta.",
       templateLabel: "Plantilla:",
       templateNone: "Genérica limpia",
       filenamePlaceholder: "nombre-fichero",
@@ -135,6 +159,7 @@ const I18N = {
       downloadBtn: "Descargar .docx",
       converting: "Convirtiendo…",
       downloaded: "Documento descargado ✔",
+      buildingTitle: "Generando tu documento…",
     },
     compare: {
       title: "Listo para usar tal cual. Mejor con tu propia marca.",
@@ -145,17 +170,36 @@ const I18N = {
       cta: "Sube tu plantilla — 1 descarga gratis",
     },
     usecases: {
-      title: "Pensado para quien entrega documentos",
-      case1: { title: "Consultores", desc: "Convierte propuestas e informes en documentos con el look de tu consultora, sin reformatear a mano." },
-      case2: { title: "QA / informes técnicos", desc: "Coloreado automático Pass/Fail en cada tabla de resultados, directo desde tu Markdown." },
-      case3: { title: "Peritos", desc: "Genera informes periciales con tu membrete corporativo, listos para firmar, cada vez." },
+      title: "Pensado para profesionales de cualquier sector",
+      subtitle: "Desde un trabajo universitario hasta un informe técnico en el trabajo — si tu IA puede escribirlo, nosotros lo convertimos a Word.",
+      case1: { title: "Trabajos universitarios", desc: "Convierte el ensayo o capítulo de TFG que redactó tu IA en un documento con el formato que pide tu profesor." },
+      case2: { title: "Ingeniería y especificaciones funcionales", desc: "Especificaciones y documentación técnica estructurada, con tablas y encabezados, lista para compartir con tu equipo." },
+      case3: { title: "QA / informes técnicos", desc: "Coloreado automático Pass/Fail en cada tabla de resultados, directo desde tu Markdown." },
+    },
+    promptDemo: {
+      title: "¿No sabes qué pedirle a tu IA?",
+      subtitle: "Copia este prompt, pégalo en tu IA, y luego pega aquí arriba la respuesta.",
+      promptLines: [
+        "Escribe un informe formal sobre: <tu tema aquí>",
+        "",
+        "Estrúctúralo así:",
+        "- Un título (H1) y una breve introducción",
+        "- De 2 a 4 secciones con encabezados H2 claros",
+        "- Párrafos cortos — nada de bloques de texto enormes",
+        "- Al menos una tabla si hay datos que comparar",
+        "- Una breve conclusión al final",
+        "",
+        "Formatea la respuesta en Markdown (#, ##, tablas) para que se convierta bien.",
+      ],
+      copyBtn: "Copiar prompt",
+      copiedBtn: "Copiado ✔",
     },
     apiTeaser: {
       title: "Intégralo en tu propio producto",
       desc: "Un endpoint máquina a máquina autenticado con una API key. Para pipelines de CI/CD o tu propio SaaS.",
       cta: "Ver documentación de la API",
     },
-    footer: { tagline: "Formalize — pega Markdown, descarga Word. Sin tags, sin JSON, sin código." },
+    footer: { tagline: "AI to Word — pega la respuesta de tu IA, descarga Word. Sin tags, sin JSON, sin código." },
     auth: {
       loginTitle: "Iniciar sesión", signupTitle: "Crear cuenta",
       emailPlaceholder: "Email", passwordPlaceholder: "Contraseña", passwordPlaceholderMin: "Contraseña (mín. 6 caracteres)",
@@ -172,6 +216,10 @@ const I18N = {
       newTemplateBtn: "Subir una plantilla nueva",
       useBtn: "Usar esta plantilla",
       deleteBtn: "Borrar",
+      studioLabel: "Estudio de plantillas",
+      stepUpload: "Subir",
+      stepMap: "Mapear estilos",
+      stepConvert: "Convertir",
       step1Title: "Paso 1 — Sube tu .dotx/.docx",
       step1Desc: "La guardamos tal cual, sin modificarla.",
       nameLabel: "Nombre de la plantilla",
@@ -201,16 +249,16 @@ const I18N = {
       free: { name: "Free", price: "0€", period: "para siempre", desc: "El anzuelo — mejor que el resto de conversores gratuitos.",
         f1: "Conversiones ilimitadas", f2: "Sin registro", f3: "Plantilla genérica limpia", f4: "Coloreado Pass/Fail en tablas",
         cta: "Empezar a convertir" },
-      pro: { name: "Pro", price: "79€", period: "/ año", desc: "Para quien necesita su propia plantilla corporativa.",
+      pro: { name: "Pro", price: "3,99€", period: "/ mes", desc: "Menos que un café al mes — para tu propia plantilla corporativa.",
         f1: "Plantilla .dotx/.docx propia y persistente", f2: "Auto-mapeo de estilos (con fallback manual)", f3: "Reglas condicionales (Pass/Fail)", f4: "1 descarga de prueba gratis antes de pagar",
-        cta: "Sube tu plantilla" },
+        cta: "Sube tu plantilla", currentPlan: "Tu plan actual" },
       api: { name: "API", price: "Por uso", period: "", desc: "Para pipelines de CI/CD e integraciones de producto.",
         f1: "Endpoint máquina a máquina", f2: "Autenticado con API key", f3: "Sin coste por asiento", f4: "Pensado para automatización",
         cta: "Hablemos" },
       faqTitle: "Preguntas frecuentes",
       faq1q: "¿El plan free es de verdad ilimitado?", faq1a: "Sí. Solo tiene un límite por IP para frenar scripts de abuso, nunca para limitar a una persona real.",
       faq2q: "¿Qué pasa tras mi 1 descarga gratis de Pro?", faq2a: "Verás un aviso claro para hacerte Pro — nunca una preview difuminada o falsa. La primera descarga siempre es el fichero real y completo.",
-      faq3q: "¿Puedo cancelar cuando quiera?", faq3a: "Sí, Pro se factura anualmente sin permanencia más allá del periodo en curso.",
+      faq3q: "¿Puedo cancelar cuando quiera?", faq3a: "Sí. Pro se factura mensualmente, cancela cuando quieras — sin permanencia.",
     },
     api: {
       title: "Integra la generación de documentos en tu producto",
@@ -240,7 +288,43 @@ const I18N = {
 const state = {
   lang: localStorage.getItem("formalize_lang") || "en",
   session: null,
+  tier: null,
 };
+
+// ---------------------------------------------------------------------
+// Loading animation reutilizable (conversión hero + wizard paso 3): siempre
+// se muestra un mínimo de tiempo para dar sensación de trabajo real, incluso
+// si el backend responde antes (ver punto 4 de la ronda de UX de julio).
+// ---------------------------------------------------------------------
+function withMinDuration(promise, ms) {
+  const timer = new Promise((resolve) => setTimeout(resolve, ms));
+  return Promise.all([promise, timer]).then(([result]) => result);
+}
+
+function createLoadingWidget() {
+  const wrap = document.createElement("div");
+  wrap.className = "ai2w-loading";
+  wrap.innerHTML =
+    '<div class="ai2w-loading-ring"></div>' +
+    '<div class="ai2w-loading-doc"><span></span><span></span><span></span></div>' +
+    '<p class="ai2w-loading-text"></p>';
+  wrap.querySelector(".ai2w-loading-text").textContent = t("hero.buildingTitle");
+  return wrap;
+}
+
+function showLoadingIn(root) {
+  hideLoadingIn(root);
+  const widget = createLoadingWidget();
+  root._ai2wLoading = widget;
+  root.appendChild(widget);
+}
+
+function hideLoadingIn(root) {
+  if (root._ai2wLoading) {
+    root._ai2wLoading.remove();
+    root._ai2wLoading = null;
+  }
+}
 
 function t(key) {
   const parts = key.split(".");
@@ -418,17 +502,23 @@ async function refreshAuthUI(config) {
   if (btnLogin) btnLogin.classList.toggle("hidden", loggedIn);
   if (btnSignup) btnSignup.classList.toggle("hidden", loggedIn);
 
-  if (!badge) return;
-  if (!loggedIn) { badge.classList.add("hidden"); return; }
+  if (!loggedIn) {
+    state.tier = null;
+    if (badge) badge.classList.add("hidden");
+    document.dispatchEvent(new CustomEvent("ai2w:auth", { detail: { loggedIn: false, tier: null } }));
+    return;
+  }
+
   try {
     const headers = await getAuthHeader();
     const resp = await fetch(`${config.API_BASE_URL}/api/me`, { headers });
     if (resp.ok) {
       const me = await resp.json();
-      badge.textContent = me.tier;
-      badge.classList.remove("hidden");
+      state.tier = me.tier;
+      if (badge) { badge.textContent = me.tier; badge.classList.remove("hidden"); }
     }
   } catch (err) {
-    badge.classList.add("hidden");
+    if (badge) badge.classList.add("hidden");
   }
+  document.dispatchEvent(new CustomEvent("ai2w:auth", { detail: { loggedIn: true, tier: state.tier } }));
 }
