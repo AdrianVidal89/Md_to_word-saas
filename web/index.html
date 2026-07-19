@@ -9,18 +9,20 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
 <script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          brand: {
-            green: '#3dcd58',
-            blue: '#00b0f0',
+  if (typeof tailwind !== "undefined") {
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              green: '#3dcd58',
+              blue: '#00b0f0',
+            },
           },
         },
       },
-    },
-  };
+    };
+  }
 </script>
 <style>
   #preview :where(td):first-child { border-left: none; }
@@ -74,8 +76,8 @@
            visible sin scroll en mobile (antes que el preview). -->
       <div class="order-1 flex flex-col gap-2">
         <div class="flex flex-wrap items-center gap-2 text-xs">
-          <label class="flex items-center gap-1 text-slate-400" data-i18n="hero.templateLabel">
-            Template:
+          <label class="flex items-center gap-1 text-slate-400">
+            <span data-i18n="hero.templateLabel">Template:</span>
             <select id="template-select" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-slate-100">
               <option value="none" data-i18n="hero.templateNone">Clean default</option>
               <!--TEMPLATE_OPTIONS-->
@@ -464,11 +466,19 @@ applyI18n();
 })();
 
 // ---------------------------------------------------------------------
-// Supabase client
+// Supabase client — nunca debe poder tumbar el resto del script: si el CDN
+// de supabase-js falla (bloqueador de anuncios, red, CDN caído), el
+// conversor gratuito (que no depende de Supabase para nada) tiene que
+// seguir funcionando igual. Login/signup/wizard Pro se degradan solos.
 // ---------------------------------------------------------------------
-const supabaseClient = (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY)
-  ? supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY)
-  : null;
+let supabaseClient = null;
+try {
+  if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && typeof supabase !== "undefined") {
+    supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+  }
+} catch (err) {
+  console.warn("Supabase client unavailable, continuing without auth:", err);
+}
 
 async function getAuthHeader() {
   if (!supabaseClient) return {};
@@ -500,7 +510,14 @@ function colorizePassFail(root) {
 }
 
 function renderPreview() {
-  preview.innerHTML = marked.parse(stripFrontmatter(editor.value || ""));
+  const raw = stripFrontmatter(editor.value || "");
+  if (typeof marked === "undefined") {
+    // El CDN de marked.js no cargó: degradar a texto plano en vez de
+    // romper el preview (la conversión real en el servidor no depende de esto).
+    preview.textContent = raw;
+    return;
+  }
+  preview.innerHTML = marked.parse(raw);
   colorizePassFail(preview);
 }
 
