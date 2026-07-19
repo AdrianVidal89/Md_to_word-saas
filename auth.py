@@ -16,12 +16,15 @@
 
 import hashlib
 import hmac
+import logging
 import os
 import time
 from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from threading import Lock
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 import jwt
 from fastapi import Depends, Header, HTTPException, Request, status
@@ -173,15 +176,21 @@ def log_conversion(
     is_custom_template: bool,
     is_trial_download: bool = False,
 ) -> None:
-    supabase = get_supabase()
-    supabase.table("conversions_log").insert(
-        {
-            "user_id": user.id if user else None,
-            "ip_address": ip,
-            "is_custom_template": is_custom_template,
-            "is_trial_download": is_trial_download,
-        }
-    ).execute()
+    """Best-effort: es un registro de auditoría/analítica, no debe tumbar
+    una conversión que ya se generó correctamente si Supabase está caído o
+    inalcanzable (evita un 500 opaco por un problema ajeno a la conversión)."""
+    try:
+        supabase = get_supabase()
+        supabase.table("conversions_log").insert(
+            {
+                "user_id": user.id if user else None,
+                "ip_address": ip,
+                "is_custom_template": is_custom_template,
+                "is_trial_download": is_trial_download,
+            }
+        ).execute()
+    except Exception:
+        logger.warning("No se pudo registrar la conversión en conversions_log", exc_info=True)
 
 
 def check_custom_template_quota(user: AuthenticatedUser) -> None:
