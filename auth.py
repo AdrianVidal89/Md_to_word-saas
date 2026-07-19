@@ -1,17 +1,23 @@
-"""Autenticación y controles de negocio (freemium, anti-abuso, API keys).
+"""Autenticación y controles de negocio (rate-limit anti-abuso, anti-abuso pro, API keys).
 
 - JWT nativo de Supabase Auth, verificado localmente (HS256 + SUPABASE_JWT_SECRET),
   sin llamada de red a Supabase en el hot path.
-- Freemium: 3 conversiones / 7 días por user_id (autenticado) o ip_address (anónimo).
-- Anti-abuso: un usuario 'pro' que aparece con >PRO_MAX_IPS_24H IPs distintas
-  en 24h se bloquea con 403 (posible cuenta compartida).
+- La conversión genérica (`/api/convert`) es pública, sin login y sin límite de
+  negocio: solo lleva un rate-limit anti-abuso por IP (ver check_ip_rate_limit),
+  pensado para proteger la capa gratuita de Render de scripts/loops, no para
+  frenar al usuario legítimo.
+- Anti-abuso de cuentas Pro: un usuario 'pro' que aparece con >PRO_MAX_IPS_24H
+  IPs distintas en 24h se bloquea con 403 (posible cuenta compartida).
 - B2B: X-API-Key validado contra el hash almacenado en api_keys.key_hash.
 """
 
 import hashlib
 import hmac
 import os
+import time
+from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
+from threading import Lock
 from typing import Optional
 
 import jwt
@@ -22,7 +28,37 @@ from models import AuthenticatedUser
 
 SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
 PRO_MAX_IPS_24H = int(os.environ.get("PRO_MAX_IPS_24H", "2"))
-FREE_TIER_WEEKLY_LIMIT = int(os.environ.get("FREE_TIER_WEEKLY_LIMIT", "3"))
+
+RATE_LIMIT_MAX_REQUESTS = int(os.environ.get("RATE_LIMIT_MAX_REQUESTS", "20"))
+RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get("RATE_LIMIT_WINDOW_SECONDS", "60"))
+
+# Ventana deslizante en memoria del proceso: suficiente para anti-abuso (no es
+# una cuota de negocio que deba sobrevivir a un reinicio) y no añade infra de
+# pago (ni Redis ni una tabla de Postgres con throughput de escritura alto).
+_rate_limit_lock = Lock()
+_rate_limit_hits: dict[str, deque] = defaultdict(deque)
+
+
+def check_ip_rate_limit(ip: str) -> None:
+    """Lanza 429 si la IP supera RATE_LIMIT_MAX_REQUESTS peticiones en los
+    últimos RATE_LIMIT_WINDOW_SECONDS. Anti-abuso, no límite de producto."""
+    now = time.monotonic()
+    cutoff = now - RATE_LIMIT_WINDOW_SECONDS
+
+    with _rate_limit_lock:
+        hits = _rate_limit_hits[ip]
+        while hits and hits[0] < cutoff:
+            hits.popleft()
+
+        if len(hits) >= RATE_LIMIT_MAX_REQUESTS:
+            retry_after = max(1, int(hits[0] + RATE_LIMIT_WINDOW_SECONDS - now))
+            raise HTTPException(
+                status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Demasiadas conversiones desde esta IP. Reintenta en {retry_after}s.",
+                headers={"Retry-After": str(retry_after)},
+            )
+
+        hits.append(now)
 
 
 def get_client_ip(request: Request) -> str:
@@ -121,30 +157,6 @@ async def require_user(
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Se requiere iniciar sesión")
     return user
-
-
-def check_freemium_quota(user: Optional[AuthenticatedUser], ip: str) -> None:
-    """Lanza 429 si el usuario/IP ya agotó las FREE_TIER_WEEKLY_LIMIT
-    conversiones de los últimos 7 días. No aplica a tiers != 'free'."""
-    if user and user.tier != "free":
-        return
-
-    supabase = get_supabase()
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
-
-    query = supabase.table("conversions_log").select("id", count="exact").gte("created_at", cutoff)
-    query = query.eq("user_id", user.id) if user else query.eq("ip_address", ip)
-    resp = query.execute()
-    count = resp.count if resp.count is not None else len(resp.data or [])
-
-    if count >= FREE_TIER_WEEKLY_LIMIT:
-        raise HTTPException(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=(
-                f"Límite de {FREE_TIER_WEEKLY_LIMIT} conversiones gratuitas por semana alcanzado. "
-                "Hazte Pro para conversiones ilimitadas."
-            ),
-        )
 
 
 def log_conversion(user: Optional[AuthenticatedUser], ip: str, is_custom_template: bool) -> None:

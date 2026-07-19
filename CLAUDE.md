@@ -100,25 +100,35 @@ Supabase (PostgreSQL managed + Auth + JWT)
 
 ## 5. Modelo de monetización
 
-### 5.1 Freemium (usuarios web, tier `free`)
+> **Reorientación (posicionamiento actual, sustituye al modelo original):** el
+> free ya no es una versión limitada del producto — es el lead magnet. El
+> muro de pago se movió de "cuántas veces conviertes" a "puedes usar tu
+> propia plantilla corporativa de forma persistente". Si encuentras código o
+> docs que hablen de un límite de 3/semana o de un flujo de "upsell/caramelo"
+> con `HTTP 402` + blur, es rastro del modelo anterior — no lo reintroduzcas.
 
-- Límite: **3 conversiones por 7 días**, contadas por `user_id` (si hay JWT
-  válido) o por `ip_address` (anónimo, sin cuenta). Se consulta
-  `conversions_log` antes de procesar. Al superar el límite: `HTTP 429`.
-- El límite **no aplica** a usuarios con `tier = 'pro'`.
+### 5.1 Free (anzuelo): conversión genérica ilimitada, sin registro
 
-### 5.2 El "caramelo" (upsell de plantillas personalizadas)
+- `POST /api/convert` es **público, sin JWT y sin cuota de negocio**. Cualquiera
+  pega Markdown y descarga el `.docx` al instante, sin crear cuenta.
+- Solo lleva un **rate-limit anti-abuso por IP** (`auth.check_ip_rate_limit`,
+  ventana deslizante en memoria — ver `RATE_LIMIT_MAX_REQUESTS`/
+  `RATE_LIMIT_WINDOW_SECONDS`), pensado para proteger la capa gratuita de
+  Render de scripts/loops, **no** para frenar al usuario legítimo. No es una
+  cuota de producto: no distingue tiers ni usuarios, solo IP.
+- La plantilla usada en este endpoint es siempre una del catálogo whitelisted
+  (`converter.resolve_template`) — nunca una subida por el cliente.
 
-Si un usuario sin `tier = 'pro'` sube una plantilla `.docx` personalizada
-(campo `template_file` en `/api/convert`), el backend:
+### 5.2 Pro: plantillas corporativas propias persistentes
 
-1. Procesa el documento igualmente (usa la lógica de builder normal).
-2. **No devuelve el `.docx` binario.** Devuelve `HTTP 402 Payment Required`
-   con un JSON que incluye una muestra de texto de la previsualización (no
-   el archivo), invitando a hacer upgrade.
-3. El frontend captura el 402, difumina visualmente un contenedor de
-   "documento listo" (`filter: blur(5px); pointer-events: none;`) y superpone
-   un modal con CTA a Stripe.
+El muro de pago es la posibilidad de subir una plantilla `.dotx`/`.docx`
+propia, que el sistema **persiste** (Supabase Storage) y reutiliza en
+conversiones futuras, con auto-mapeo de estilos Markdown → estilos Word y
+reglas condicionales (p. ej. Pass/Fail). Esto vive en endpoints/UI aparte del
+`/api/convert` genérico (wizard de 3 pasos: subir → mapear estilos con
+fallback manual → conversión de prueba). El CTA de upgrade en la UI es
+contextual (aparece junto al resultado gratuito, comparando genérico vs. con
+plantilla propia) y nunca bloqueante.
 
 ### 5.3 B2B API
 
@@ -127,13 +137,14 @@ del login de usuario final: se autentica exclusivamente con un header
 `X-API-Key`, validado contra `api_keys.key_hash` (hash, nunca texto plano).
 Pensado para integraciones (CI/CD, otros SaaS) con cuota/facturación propia.
 
-### 5.4 Anti-abuso
+### 5.4 Anti-abuso de cuentas Pro
 
 Al validar un JWT de un usuario `pro`, se registra la IP de origen en
 `users.last_ips` (JSONB, lista de `{ip, ts}` acotada a las últimas 24h). Si en
 esa ventana aparecen **más de 2 IPs distintas**, se asume uso compartido de
-cuenta / abuso de cuota y se responde `HTTP 403` en vez de procesar la
-conversión.
+cuenta y se responde `HTTP 403` en vez de procesar la conversión. Esto es
+independiente del rate-limit por IP del endpoint público (§5.1): aquel
+protege infraestructura, este protege contra compartir una suscripción Pro.
 
 ## 6. Convenciones de desarrollo
 

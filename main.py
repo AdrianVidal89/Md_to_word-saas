@@ -2,9 +2,15 @@
 
 Endpoints:
 - GET  /                       SPA (web/index.html)
-- GET  /templates              catálogo de plantillas disponibles
-- POST /api/convert            conversión freemium (JWT opcional + límite por IP/usuario)
+- GET  /healthz                warm-up / liveness (mitiga cold start de Render)
+- GET  /templates               catálogo de plantillas disponibles
+- POST /api/convert            conversión genérica: pública, sin login, sin
+                                límite de negocio — solo rate-limit por IP
+                                anti-abuso (ver auth.check_ip_rate_limit)
 - POST /api/v1/b2b/convert     conversión B2B (obligatorio X-API-Key)
+
+La subida/persistencia de plantillas corporativas propias (muro de pago Pro)
+vive en un módulo aparte (ver Fase 2), no en este endpoint público.
 
 La conversión (`build_docx`) es CPU-bound y síncrona: se delega siempre a un
 threadpool (`run_in_threadpool`) para no bloquear el event loop de asyncio,
@@ -12,7 +18,6 @@ tal y como señala el análisis de arquitectura del monolito original.
 """
 
 import os
-import tempfile
 from pathlib import Path
 from typing import Optional
 
@@ -22,13 +27,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
-from auth import (
-    check_freemium_quota,
-    get_client_ip,
-    get_current_user_optional,
-    log_conversion,
-    require_api_key,
-)
+from auth import check_ip_rate_limit, get_client_ip, log_conversion, require_api_key
 from converter import build_docx, list_templates, parse, resolve_template
 from models import AuthenticatedUser
 
@@ -36,10 +35,6 @@ BASE_DIR = Path(__file__).resolve().parent
 WEB_DIR = BASE_DIR / "web"
 
 MAX_MARKDOWN_BYTES = 2 * 1024 * 1024  # 2 MB: límite defensivo de payload
-MAX_TEMPLATE_BYTES = 15 * 1024 * 1024  # 15 MB: plantillas .docx de referencia
-UPSELL_PREVIEW_CHARS = 400
-
-STRIPE_CHECKOUT_URL = os.environ.get("STRIPE_CHECKOUT_URL", "https://buy.stripe.com/test_xxx")
 
 app = FastAPI(title="MD2Docx SaaS")
 
@@ -78,6 +73,14 @@ async def get_templates():
     return JSONResponse(list_templates())
 
 
+@app.get("/healthz")
+async def healthz():
+    """Warm-up / liveness. El frontend hace ping aquí al cargar la página
+    para mitigar el cold start del free tier de Render (spin-down tras
+    inactividad)."""
+    return JSONResponse({"status": "ok"})
+
+
 # --------------------------------------------------------------------------
 # Helpers compartidos
 # --------------------------------------------------------------------------
@@ -97,35 +100,6 @@ def _read_upload_text(raw: bytes) -> str:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"El fichero no es UTF-8 válido: {exc}") from exc
 
 
-def _preview_text(blocks: list, max_chars: int = UPSELL_PREVIEW_CHARS) -> str:
-    parts = []
-    for block in blocks:
-        if block["type"] == "heading":
-            parts.append(block["text"])
-        elif block["type"] == "paragraph":
-            parts.append("".join(r.get("text", "") for r in block.get("children", [])))
-        if sum(len(p) for p in parts) >= max_chars:
-            break
-    text = "\n".join(p for p in parts if p.strip())
-    return (text[:max_chars] + "…") if len(text) > max_chars else text
-
-
-async def _resolve_custom_template(template_file: Optional[UploadFile]) -> Optional[str]:
-    """Guarda la plantilla subida por el usuario en un fichero temporal y
-    devuelve su ruta. None si no se subió ninguna plantilla custom."""
-    if template_file is None or not template_file.filename:
-        return None
-
-    raw = await template_file.read()
-    if len(raw) > MAX_TEMPLATE_BYTES:
-        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "La plantilla supera el tamaño máximo permitido.")
-
-    tmp = tempfile.NamedTemporaryFile(suffix=".docx", delete=False)
-    tmp.write(raw)
-    tmp.close()
-    return tmp.name
-
-
 def _parse_markdown_source(markdown: str, file: Optional[UploadFile], raw_file_bytes: Optional[bytes]):
     if markdown.strip():
         return markdown
@@ -135,7 +109,11 @@ def _parse_markdown_source(markdown: str, file: Optional[UploadFile], raw_file_b
 
 
 # --------------------------------------------------------------------------
-# POST /api/convert — freemium (web, JWT opcional)
+# POST /api/convert — conversión genérica: pública, sin login, ilimitada.
+# Es el lead magnet del producto (ver CLAUDE.md §5.1): solo lleva un
+# rate-limit anti-abuso por IP, nunca una cuota de negocio. La plantilla es
+# siempre la del catálogo whitelisted (converter.resolve_template) — subir y
+# persistir una plantilla propia es una feature Pro y vive en un módulo aparte.
 # --------------------------------------------------------------------------
 
 @app.post("/api/convert")
@@ -147,16 +125,10 @@ async def api_convert(
     author: Optional[str] = Form(default=None),
     filename: str = Form(default="documento"),
     file: Optional[UploadFile] = None,
-    template_file: Optional[UploadFile] = None,
-    user: Optional[AuthenticatedUser] = Depends(get_current_user_optional),
 ):
     ip = get_client_ip(request)
+    check_ip_rate_limit(ip)
 
-    # 1. Cuota freemium: 3 conversiones / 7 días por user_id o ip_address
-    #    (no aplica a tiers distintos de 'free').
-    check_freemium_quota(user, ip)
-
-    # 2. Fuente del Markdown: el editor tiene prioridad sobre el fichero subido.
     raw_file_bytes = await file.read() if file is not None and file.filename else None
     if raw_file_bytes and len(raw_file_bytes) > MAX_MARKDOWN_BYTES:
         raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "El fichero Markdown supera el tamaño máximo permitido.")
@@ -172,33 +144,10 @@ async def api_convert(
     if author and "author" not in metadata:
         metadata["author"] = author
 
-    # 3. Plantilla: subida custom (upsell) vs. catálogo whitelisted.
-    custom_template_path = await _resolve_custom_template(template_file)
-    is_custom_template = custom_template_path is not None
-    template_path = custom_template_path or resolve_template(template)
+    template_path = resolve_template(template)
+    docx_bytes = await run_in_threadpool(build_docx, blocks, metadata, template_path)
 
-    try:
-        docx_bytes = await run_in_threadpool(build_docx, blocks, metadata, template_path)
-    finally:
-        if custom_template_path:
-            os.unlink(custom_template_path)
-
-    log_conversion(user, ip, is_custom_template)
-
-    # 4. El "caramelo": plantilla custom + tier no-pro -> 402 con preview, sin binario.
-    if is_custom_template and (user is None or user.tier != "pro"):
-        return JSONResponse(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            content={
-                "error": "upgrade_required",
-                "message": (
-                    "Tu documento con formato corporativo está listo. "
-                    "Pásate a Pro para descargarlo e integrarlo en tu flujo."
-                ),
-                "preview_text": _preview_text(blocks),
-                "checkout_url": STRIPE_CHECKOUT_URL,
-            },
-        )
+    log_conversion(user=None, ip=ip, is_custom_template=False)
 
     safe_name = _safe_filename((file.filename if file and file.filename else filename))
     return Response(

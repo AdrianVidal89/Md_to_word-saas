@@ -18,24 +18,14 @@ class ErrorResponse(BaseModel):
     detail: Optional[str] = None
 
 
-class UpsellResponse(BaseModel):
-    """Cuerpo devuelto con HTTP 402 cuando un usuario no-pro sube una
-    plantilla personalizada. Nunca contiene el binario real del .docx."""
-
-    error: Literal["upgrade_required"] = "upgrade_required"
-    message: str = (
-        "Tu documento con formato corporativo está listo. "
-        "Pásate a Pro para descargarlo e integrarlo en tu flujo."
-    )
-    preview_text: str
-    checkout_url: str
-
-
 class RateLimitResponse(BaseModel):
-    error: Literal["rate_limit_exceeded"] = "rate_limit_exceeded"
-    message: str = "Has alcanzado el límite de conversiones gratuitas de esta semana."
-    limit: int
-    retry_after_days: int = 7
+    """Cuerpo devuelto con HTTP 429 por el rate-limit anti-abuso por IP del
+    endpoint público de conversión. No es un límite de negocio (el free es
+    ilimitado) — protege la capa gratuita de Render de scripts/loops."""
+
+    error: Literal["rate_limited"] = "rate_limited"
+    message: str
+    retry_after_seconds: int
 
 
 class TemplateInfo(BaseModel):
