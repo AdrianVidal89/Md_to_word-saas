@@ -8,9 +8,8 @@ Endpoints:
                                 límite de negocio — solo rate-limit por IP
                                 anti-abuso (ver auth.check_ip_rate_limit)
 - POST /api/v1/b2b/convert     conversión B2B (obligatorio X-API-Key)
-
-La subida/persistencia de plantillas corporativas propias (muro de pago Pro)
-vive en un módulo aparte (ver Fase 2), no en este endpoint público.
+- /api/pro/templates/*         plantillas corporativas propias persistentes
+                                (muro de pago Pro, ver pro_templates.py)
 
 La conversión (`build_docx`) es CPU-bound y síncrona: se delega siempre a un
 threadpool (`run_in_threadpool`) para no bloquear el event loop de asyncio,
@@ -30,6 +29,7 @@ from starlette.concurrency import run_in_threadpool
 from auth import check_ip_rate_limit, get_client_ip, log_conversion, require_api_key
 from converter import build_docx, list_templates, parse, resolve_template
 from models import AuthenticatedUser
+from pro_templates import router as pro_templates_router
 
 BASE_DIR = Path(__file__).resolve().parent
 WEB_DIR = BASE_DIR / "web"
@@ -49,6 +49,8 @@ app.add_middleware(
 
 if (WEB_DIR / "assets").exists():
     app.mount("/assets", StaticFiles(directory=str(WEB_DIR / "assets")), name="assets")
+
+app.include_router(pro_templates_router)
 
 
 # --------------------------------------------------------------------------

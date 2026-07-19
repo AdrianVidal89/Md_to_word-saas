@@ -8,6 +8,9 @@
   frenar al usuario legítimo.
 - Anti-abuso de cuentas Pro: un usuario 'pro' que aparece con >PRO_MAX_IPS_24H
   IPs distintas en 24h se bloquea con 403 (posible cuenta compartida).
+- Muro de pago Pro (plantillas propias persistentes): un usuario 'free' tiene
+  derecho a exactamente 1 descarga real de prueba antes de pagar (ver
+  check_custom_template_quota / mark_custom_template_trial_used).
 - B2B: X-API-Key validado contra el hash almacenado en api_keys.key_hash.
 """
 
@@ -148,7 +151,12 @@ async def get_current_user_optional(
     profile = _load_or_create_profile(supabase, user_id, payload.get("email"))
     _check_ip_abuse(supabase, profile, get_client_ip(request))
 
-    return AuthenticatedUser(id=profile["id"], email=profile.get("email"), tier=profile.get("tier", "free"))
+    return AuthenticatedUser(
+        id=profile["id"],
+        email=profile.get("email"),
+        tier=profile.get("tier", "free"),
+        custom_template_trial_used=bool(profile.get("custom_template_trial_used_at")),
+    )
 
 
 async def require_user(
@@ -159,15 +167,47 @@ async def require_user(
     return user
 
 
-def log_conversion(user: Optional[AuthenticatedUser], ip: str, is_custom_template: bool) -> None:
+def log_conversion(
+    user: Optional[AuthenticatedUser],
+    ip: str,
+    is_custom_template: bool,
+    is_trial_download: bool = False,
+) -> None:
     supabase = get_supabase()
     supabase.table("conversions_log").insert(
         {
             "user_id": user.id if user else None,
             "ip_address": ip,
             "is_custom_template": is_custom_template,
+            "is_trial_download": is_trial_download,
         }
     ).execute()
+
+
+def check_custom_template_quota(user: AuthenticatedUser) -> None:
+    """Muro de pago Pro (ver CLAUDE.md §5.2), con una prueba gratuita: deja
+    pasar sin límite a tiers pro/enterprise; para 'free' permite exactamente
+    1 descarga real con plantilla propia y bloquea las siguientes con 402
+    hasta que el usuario se haga Pro. No hay ofuscación aquí — la primera
+    descarga es el fichero real completo, no una preview difuminada."""
+    if user.tier != "free":
+        return
+    if not user.custom_template_trial_used:
+        return
+    raise HTTPException(
+        status.HTTP_402_PAYMENT_REQUIRED,
+        detail=(
+            "Ya usaste tu descarga de prueba gratuita con tu plantilla propia. "
+            "Hazte Pro para conversiones ilimitadas con tu plantilla corporativa."
+        ),
+    )
+
+
+def mark_custom_template_trial_used(user_id: str) -> None:
+    supabase = get_supabase()
+    supabase.table("users").update(
+        {"custom_template_trial_used_at": datetime.now(timezone.utc).isoformat()}
+    ).eq("id", user_id).execute()
 
 
 def hash_api_key(raw_key: str) -> str:

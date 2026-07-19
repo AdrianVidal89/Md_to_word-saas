@@ -11,6 +11,7 @@ class AuthenticatedUser(BaseModel):
     id: str
     email: Optional[str] = None
     tier: Literal["free", "pro", "enterprise"] = "free"
+    custom_template_trial_used: bool = False
 
 
 class ErrorResponse(BaseModel):
@@ -31,6 +32,32 @@ class RateLimitResponse(BaseModel):
 class TemplateInfo(BaseModel):
     id: str
     name: str
+
+
+class StyleMapping(BaseModel):
+    """Mapeo Markdown -> estilo de Word detectado (o ajustado a mano) para
+    una plantilla Pro. Un slot en None significa "sin detectar": la UI debe
+    ofrecer siempre el dropdown manual con la lista de estilos disponibles
+    en la plantilla como fallback (ver template_mapping.py)."""
+
+    heading_1: Optional[str] = None
+    heading_2: Optional[str] = None
+    heading_3: Optional[str] = None
+    table: Optional[str] = None
+
+
+class TemplateUploadResponse(BaseModel):
+    id: str
+    name: str
+    detected_mapping: StyleMapping
+    available_styles: list[str]
+
+
+class TemplateSummary(BaseModel):
+    id: str
+    name: str
+    style_mapping: StyleMapping
+    created_at: str
 
 
 class ApiKeyCreated(BaseModel):

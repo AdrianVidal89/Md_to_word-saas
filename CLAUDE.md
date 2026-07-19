@@ -119,16 +119,27 @@ Supabase (PostgreSQL managed + Auth + JWT)
 - La plantilla usada en este endpoint es siempre una del catálogo whitelisted
   (`converter.resolve_template`) — nunca una subida por el cliente.
 
-### 5.2 Pro: plantillas corporativas propias persistentes
+### 5.2 Pro: plantillas corporativas propias persistentes (con 1 prueba gratis)
 
 El muro de pago es la posibilidad de subir una plantilla `.dotx`/`.docx`
-propia, que el sistema **persiste** (Supabase Storage) y reutiliza en
-conversiones futuras, con auto-mapeo de estilos Markdown → estilos Word y
-reglas condicionales (p. ej. Pass/Fail). Esto vive en endpoints/UI aparte del
-`/api/convert` genérico (wizard de 3 pasos: subir → mapear estilos con
-fallback manual → conversión de prueba). El CTA de upgrade en la UI es
-contextual (aparece junto al resultado gratuito, comparando genérico vs. con
-plantilla propia) y nunca bloqueante.
+propia, que el sistema **persiste** (Supabase Storage, tabla
+`public.templates` — ver `supabase/migrations/002_pro_templates.sql`) y
+reutiliza en conversiones futuras, con auto-mapeo de estilos Markdown →
+estilos Word (`template_mapping.py`, best-effort con dropdown manual como
+fallback siempre disponible) y reglas condicionales (p. ej. Pass/Fail, ya
+cubierto por el builder). Esto vive en `pro_templates.py` (`/api/pro/...`),
+aparte del `/api/convert` genérico: wizard de 3 pasos — subir → mapear
+estilos con fallback manual → conversión de prueba con preview.
+
+**Free trial de 1 descarga real**: un usuario `free` (requiere cuenta, no
+anónimo) puede completar el wizard entero y descargar **un** `.docx` real y
+completo con su propia plantilla antes de pagar — no es una preview
+difuminada ni una ofuscación, es el fichero final de verdad. Se controla con
+`users.custom_template_trial_used_at` (NULL = prueba disponible) y
+`auth.check_custom_template_quota`: la 2ª descarga con plantilla propia de un
+`free` devuelve `HTTP 402`. No aplica a `pro`/`enterprise` (sin límite). El
+CTA de upgrade en la UI es contextual (aparece junto al resultado,
+comparando genérico vs. con plantilla propia) y nunca bloqueante.
 
 ### 5.3 B2B API
 
