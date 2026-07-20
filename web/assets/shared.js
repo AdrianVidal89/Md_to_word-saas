@@ -93,6 +93,7 @@ const I18N = {
       loginSubmit: "Log in", signupSubmit: "Create account",
       switchToSignup: "No account? Sign up", switchToLogin: "Already have an account? Log in",
       notConfigured: "Supabase isn't configured yet.",
+      googleBtn: "Continue with Google", orDivider: "or",
       checkEmailTitle: "Check your inbox",
       checkEmailDesc: "We've sent a confirmation link to your email. Confirm it, then log in.",
       closeBtn: "Close",
@@ -273,6 +274,7 @@ const I18N = {
       loginSubmit: "Entrar", signupSubmit: "Crear cuenta",
       switchToSignup: "¿No tienes cuenta? Regístrate", switchToLogin: "¿Ya tienes cuenta? Entra",
       notConfigured: "Supabase no está configurado todavía.",
+      googleBtn: "Continuar con Google", orDivider: "o",
       checkEmailTitle: "Revisa tu correo",
       checkEmailDesc: "Te hemos enviado un enlace de confirmación a tu email. Confírmalo y luego inicia sesión.",
       closeBtn: "Cerrar",
@@ -453,6 +455,7 @@ const I18N = {
       loginSubmit: "Connexion", signupSubmit: "Créer un compte",
       switchToSignup: "Pas de compte ? Inscrivez-vous", switchToLogin: "Déjà un compte ? Connectez-vous",
       notConfigured: "Supabase n'est pas encore configuré.",
+      googleBtn: "Continuer avec Google", orDivider: "ou",
       checkEmailTitle: "Consultez votre boîte mail",
       checkEmailDesc: "Nous avons envoyé un lien de confirmation à votre email. Confirmez-le, puis connectez-vous.",
       closeBtn: "Fermer",
@@ -633,6 +636,7 @@ const I18N = {
       loginSubmit: "Entrar", signupSubmit: "Criar conta",
       switchToSignup: "Não tem conta? Registe-se", switchToLogin: "Já tem conta? Entre",
       notConfigured: "O Supabase ainda não está configurado.",
+      googleBtn: "Continuar com o Google", orDivider: "ou",
       checkEmailTitle: "Verifique o seu email",
       checkEmailDesc: "Enviámos um link de confirmação para o seu email. Confirme-o e depois inicie sessão.",
       closeBtn: "Fechar",
@@ -813,6 +817,7 @@ const I18N = {
       loginSubmit: "Anmelden", signupSubmit: "Konto erstellen",
       switchToSignup: "Kein Konto? Registrieren", switchToLogin: "Schon ein Konto? Anmelden",
       notConfigured: "Supabase ist noch nicht konfiguriert.",
+      googleBtn: "Mit Google fortfahren", orDivider: "oder",
       checkEmailTitle: "Prüfen Sie Ihr Postfach",
       checkEmailDesc: "Wir haben einen Bestätigungslink an Ihre E-Mail gesendet. Bestätigen Sie ihn und melden Sie sich dann an.",
       closeBtn: "Schließen",
@@ -993,6 +998,7 @@ const I18N = {
       loginSubmit: "登录", signupSubmit: "创建账号",
       switchToSignup: "还没有账号？注册", switchToLogin: "已有账号？登录",
       notConfigured: "Supabase 尚未配置。",
+      googleBtn: "使用 Google 继续", orDivider: "或",
       checkEmailTitle: "请查收你的邮箱",
       checkEmailDesc: "我们已向你的邮箱发送了确认链接。请确认后再登录。",
       closeBtn: "关闭",
@@ -1254,6 +1260,26 @@ async function wireAuthUI(config) {
   const btnSignup = document.getElementById("btn-signup");
   if (btnLogin) btnLogin.addEventListener("click", () => openModal("login-overlay"));
   if (btnSignup) btnSignup.addEventListener("click", () => openModal("signup-overlay"));
+
+  // Login/registro con Google (OAuth vía Supabase). Un solo flujo sirve para
+  // ambos: si la cuenta no existe, Supabase la crea al vuelo. signInWithOAuth
+  // redirige a Google y vuelve a `redirectTo`; al volver, onAuthStateChange
+  // (abajo) refresca la UI ya con sesión. Requiere tener el provider Google
+  // habilitado en el panel de Supabase (ver notas de despliegue).
+  async function startGoogleOAuth(errorElId) {
+    const errorEl = document.getElementById(errorElId);
+    if (errorEl) errorEl.textContent = "";
+    if (!supabaseClient) { if (errorEl) errorEl.textContent = t("auth.notConfigured"); return; }
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/" },
+    });
+    if (error && errorEl) errorEl.textContent = error.message;
+  }
+  const googleLoginBtn = document.getElementById("google-login-btn");
+  const googleSignupBtn = document.getElementById("google-signup-btn");
+  if (googleLoginBtn) googleLoginBtn.addEventListener("click", () => startGoogleOAuth("login-error"));
+  if (googleSignupBtn) googleSignupBtn.addEventListener("click", () => startGoogleOAuth("signup-error"));
 
   const loginSubmit = document.getElementById("login-submit");
   if (loginSubmit) {
