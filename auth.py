@@ -33,7 +33,26 @@ from database import get_supabase
 from models import AuthenticatedUser
 
 SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 PRO_MAX_IPS_24H = int(os.environ.get("PRO_MAX_IPS_24H", "2"))
+
+# Cliente JWKS para verificar los JWT ASIMÉTRICOS (ES256/RS256) que emite
+# Supabase con las "JWT signing keys" nuevas (hoy el default en proyectos
+# recientes). Se cachea: PyJWKClient guarda las claves públicas en memoria, así
+# que no hay llamada de red en el hot path salvo el primer token / rotación.
+_jwks_client = None
+_jwks_lock = Lock()
+
+
+def _get_jwks_client():
+    global _jwks_client
+    if _jwks_client is None and SUPABASE_URL:
+        with _jwks_lock:
+            if _jwks_client is None:
+                _jwks_client = jwt.PyJWKClient(
+                    f"{SUPABASE_URL}/auth/v1/.well-known/jwks.json"
+                )
+    return _jwks_client
 
 RATE_LIMIT_MAX_REQUESTS = int(os.environ.get("RATE_LIMIT_MAX_REQUESTS", "20"))
 RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get("RATE_LIMIT_WINDOW_SECONDS", "60"))
@@ -75,20 +94,48 @@ def get_client_ip(request: Request) -> str:
 
 
 def _decode_jwt(token: str) -> dict:
-    if not SUPABASE_JWT_SECRET:
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "SUPABASE_JWT_SECRET no configurado en el backend.",
-        )
+    """Verifica el JWT de Supabase Auth. Soporta los dos esquemas de firma:
+    - HS256 (legacy): clave simétrica compartida SUPABASE_JWT_SECRET.
+    - ES256/RS256 (asimétrico, "JWT signing keys" nuevas): clave pública del
+      proyecto, obtenida del JWKS (`/auth/v1/.well-known/jwks.json`).
+    El algoritmo se detecta en la cabecera del token, no se asume."""
     try:
-        return jwt.decode(
-            token,
-            SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
-            audience="authenticated",
-        )
+        alg = jwt.get_unverified_header(token).get("alg", "")
     except jwt.PyJWTError as exc:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, f"Token inválido: {exc}") from exc
+
+    try:
+        if alg == "HS256":
+            if not SUPABASE_JWT_SECRET:
+                raise HTTPException(
+                    status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    "SUPABASE_JWT_SECRET no configurado en el backend.",
+                )
+            key = SUPABASE_JWT_SECRET
+        else:
+            client = _get_jwks_client()
+            if client is None:
+                raise HTTPException(
+                    status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    "SUPABASE_URL no configurado: no se puede verificar un JWT asimétrico.",
+                )
+            key = client.get_signing_key_from_jwt(token).key
+
+        return jwt.decode(
+            token,
+            key,
+            algorithms=[alg or "HS256"],
+            audience="authenticated",
+        )
+    except HTTPException:
+        raise
+    except jwt.PyJWTError as exc:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, f"Token inválido: {exc}") from exc
+    except Exception as exc:  # p. ej. fallo de red al traer el JWKS
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            f"No se pudo verificar el token (JWKS): {exc}",
+        ) from exc
 
 
 def _load_or_create_profile(supabase, user_id: str, email: Optional[str]) -> dict:
