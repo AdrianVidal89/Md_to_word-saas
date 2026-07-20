@@ -15,6 +15,12 @@ producto deliberadas, no bugs a corregir de oficio:
 - Los blockquotes se aplanan a bloques ``paragraph`` con ``quote: True``,
   pero esa clave no la consume el builder actual (ver builder.py).
 - ``thematic_break`` se descarta explícitamente, no genera bloque.
+- Las imágenes (``![alt](url)``) se propagan como un run con clave
+  ``image`` (la URL cruda, sin decodificar aquí). El builder solo embebe
+  la imagen si esa URL es una data URI ``data:image/...;base64,...`` —
+  nunca descarga una URL http(s) externa (ver nota SSRF en builder.py).
+  Este soporte es una extensión deliberada acordada con el usuario
+  (julio 2026), no una limitación pendiente de arreglar.
 """
 
 import frontmatter
@@ -149,6 +155,18 @@ def _extract_runs(children: list, bold: bool = False, italic: bool = False) -> l
                 "italic": italic,
                 "code": False,
                 "link": child.get("attrs", {}).get("url", ""),
+            })
+
+        elif ctype == "image":
+            # Solo se admiten imágenes como data URI (ver builder.py) — una
+            # URL http(s) normal se ignora en el builder, nunca se descarga
+            # server-side (superficie SSRF en un endpoint público).
+            runs.append({
+                "text": "",
+                "bold": bold,
+                "italic": italic,
+                "code": False,
+                "image": child.get("attrs", {}).get("url", ""),
             })
 
         elif "children" in child:
