@@ -135,7 +135,7 @@
 <!-- ==================== HOME ==================== -->
 <main id="landing-view">
 
-  <section class="max-w-3xl mx-auto px-4 pt-10 md:pt-16 pb-6 text-center">
+  <section id="hero-marketing" class="max-w-3xl mx-auto px-4 pt-10 md:pt-16 pb-6 text-center">
     <p class="inline-block text-emerald-700 bg-emerald-50 border border-emerald-200 text-xs font-semibold tracking-wide uppercase px-3 py-1 rounded-full mb-5" data-i18n="hero.eyebrow">
       Free forever · No signup · No tags, no JSON
     </p>
@@ -708,11 +708,20 @@ function setProEditorBarVisible(visible) {
 
 // Tema visual Pro (glow verde "Tron") del editor principal — puramente
 // cosmético, nunca cambia dónde escribe el usuario (ver CSS ai2w-pro-theme).
+// Además, para un usuario Pro ocultamos el hero de marketing (eyebrow +
+// título + subtítulo) que le vende el producto: ya es cliente, aterriza
+// directo en una herramienta limpia (ver ronda de UX pro).
 function setProVisualTheme(isPaid) {
   document.getElementById("hero-editor-card").classList.toggle("ai2w-pro-theme", isPaid);
   const chip = document.getElementById("pro-status-chip");
   chip.classList.toggle("hidden", !isPaid);
   chip.classList.toggle("flex", isPaid);
+
+  const heroMarketing = document.getElementById("hero-marketing");
+  heroMarketing.classList.toggle("hidden", isPaid);
+  // Sin el hero, el editor quedaría pegado al header: le damos aire arriba.
+  document.getElementById("hero-editor").classList.toggle("pt-8", isPaid);
+  document.getElementById("hero-editor").classList.toggle("md:pt-12", isPaid);
 }
 
 function proToolIcon(inner) {
