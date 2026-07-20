@@ -12,6 +12,7 @@ const I18N = {
       subtitle: "Paste your AI's answer below and get a clean, formatted Word document in seconds — free and unlimited, no account needed.",
       templateLabel: "Template:",
       templateNone: "Clean default",
+      myTemplatesGroup: "My templates",
       titlePlaceholder: "Document title (optional)",
       filenamePlaceholder: "file-name",
       openFileBtn: "Open .md",
@@ -97,8 +98,10 @@ const I18N = {
       emailPlaceholder: "Email", passwordPlaceholder: "Password", passwordPlaceholderMin: "Password (min. 6 characters)",
       loginSubmit: "Log in", signupSubmit: "Create account",
       switchToSignup: "No account? Sign up", switchToLogin: "Already have an account? Log in",
-      accountCreated: "Account created. Check your email to confirm (if required).",
       notConfigured: "Supabase isn't configured yet.",
+      checkEmailTitle: "Check your inbox",
+      checkEmailDesc: "We've sent a confirmation link to your email. Confirm it, then log in.",
+      closeBtn: "Close",
     },
     wizard: {
       title: "Your corporate template",
@@ -107,8 +110,12 @@ const I18N = {
       noTemplates: "You haven't uploaded a template yet.",
       newTemplateBtn: "Upload a new template",
       useBtn: "Use this template",
+      editBtn: "Edit",
       deleteBtn: "Delete",
       studioLabel: "Template studio",
+      tocGuideTitle: "Tip: refresh fields after opening the file",
+      tocGuideDesc: "If your template includes a Table of Contents or other Word fields, Word won't update them automatically. Right-click on it and choose “Update Field” (or press F9) after opening your document.",
+      tocGuideMenuItem: "Update Field",
       stepUpload: "Upload",
       stepMap: "Map styles",
       stepConvert: "Convert",
@@ -191,6 +198,7 @@ const I18N = {
       subtitle: "Pega aquí la respuesta de tu IA y consigue un documento Word limpio y formateado en segundos — gratis e ilimitado, sin cuenta.",
       templateLabel: "Plantilla:",
       templateNone: "Genérica limpia",
+      myTemplatesGroup: "Mis plantillas",
       titlePlaceholder: "Título del documento (opcional)",
       filenamePlaceholder: "nombre-fichero",
       openFileBtn: "Abrir .md",
@@ -276,8 +284,10 @@ const I18N = {
       emailPlaceholder: "Email", passwordPlaceholder: "Contraseña", passwordPlaceholderMin: "Contraseña (mín. 6 caracteres)",
       loginSubmit: "Entrar", signupSubmit: "Crear cuenta",
       switchToSignup: "¿No tienes cuenta? Regístrate", switchToLogin: "¿Ya tienes cuenta? Entra",
-      accountCreated: "Cuenta creada. Revisa tu email para confirmar (si aplica).",
       notConfigured: "Supabase no está configurado todavía.",
+      checkEmailTitle: "Revisa tu correo",
+      checkEmailDesc: "Te hemos enviado un enlace de confirmación a tu email. Confírmalo y luego inicia sesión.",
+      closeBtn: "Cerrar",
     },
     wizard: {
       title: "Tu plantilla corporativa",
@@ -286,8 +296,12 @@ const I18N = {
       noTemplates: "Todavía no has subido ninguna plantilla.",
       newTemplateBtn: "Subir una plantilla nueva",
       useBtn: "Usar esta plantilla",
+      editBtn: "Editar",
       deleteBtn: "Borrar",
       studioLabel: "Estudio de plantillas",
+      tocGuideTitle: "Consejo: actualiza los campos al abrir el archivo",
+      tocGuideDesc: "Si tu plantilla incluye un índice u otros campos de Word, no se actualizan solos. Haz clic derecho sobre él y elige “Actualizar campos” (o pulsa F9) al abrir tu documento.",
+      tocGuideMenuItem: "Actualizar campos",
       stepUpload: "Subir",
       stepMap: "Mapear estilos",
       stepConvert: "Convertir",
@@ -361,6 +375,192 @@ const I18N = {
       cta: "Solicitar acceso API",
     },
   },
+  fr: {
+    warmup: { message: "Réveil du moteur de conversion — la première requête peut prendre quelques secondes de plus…" },
+    nav: { home: "Accueil", pricing: "Tarifs", api: "API", login: "Connexion", signup: "S'inscrire", logout: "Déconnexion", myTemplates: "Mes modèles" },
+    hero: {
+      eyebrow: "Gratuit pour toujours · Sans inscription · Sans tags, sans JSON",
+      title: "Votre modèle Word. Sans tags, sans JSON, sans code. Collez et téléchargez.",
+      subtitle: "Collez la réponse de votre IA ci-dessous et obtenez un document Word propre et formaté en quelques secondes — gratuit et illimité, sans compte.",
+      templateLabel: "Modèle :",
+      templateNone: "Modèle par défaut",
+      myTemplatesGroup: "Mes modèles",
+      titlePlaceholder: "Titre du document (facultatif)",
+      filenamePlaceholder: "nom-du-fichier",
+      openFileBtn: "Ouvrir .md",
+      editorPlaceholder: "# Collez votre Markdown ici...",
+      editorTab: "Markdown",
+      editorHint: "écrivez, collez ou déposez un .md ici",
+      markdownGuideLink: "Guide Markdown ↗",
+      previewTab: "Aperçu",
+      previewHint: "approximatif du résultat",
+      downloadBtn: "Télécharger .docx",
+      converting: "Conversion…",
+      downloaded: "Document téléchargé ✔",
+      buildingTitle: "Génération de votre document…",
+    },
+    proBar: {
+      bold: "Gras", italic: "Italique", heading: "Titre",
+      bulletList: "Liste à puces", numberedList: "Liste numérotée",
+      link: "Lien", image: "Image (Pro)", code: "Code", table: "Tableau",
+      togglePreview: "Afficher/masquer l'aperçu", help: "Aide Markdown",
+      linkPrompt: "URL du lien :",
+      imageTooLarge: "L'image est trop volumineuse (max 8 Mo).",
+      imageBadType: "Type d'image non pris en charge — utilisez PNG, JPEG, GIF, BMP ou TIFF.",
+    },
+    howitworks: {
+      title: "Comment ça marche",
+      step1: { title: "Collez", desc: "Déposez la réponse de votre IA — Markdown, texte brut, peu importe." },
+      step2: { title: "Choisissez un modèle", desc: "Utilisez le modèle par défaut, ou votre propre modèle d'entreprise avec Pro." },
+      step3: { title: "Téléchargez Word", desc: "Obtenez un .docx prêt à envoyer en quelques secondes. Sans tags, sans code." },
+    },
+    proToolbox: {
+      title: "Votre espace Pro",
+      subtitle: "Tout ce dont vous avez besoin, en un clic — sans publicité.",
+      convertBtn: "Convertir avec mon modèle",
+      manageBtn: "Gérer mes modèles",
+      apiBtn: "Accès API",
+      recentLabel: "Vos modèles",
+      empty: "Vous n'avez pas encore importé de modèle — commencez dans le studio.",
+    },
+    compare: {
+      title: "Prêt à l'emploi. Encore mieux avec votre marque.",
+      subtitle: "Le résultat gratuit est déjà propre. Importez votre modèle d'entreprise une fois et chaque futur document en hérite automatiquement.",
+      genericLabel: "GÉNÉRIQUE (gratuit)",
+      customLabel: "AVEC VOTRE MODÈLE",
+      proBadge: "PRO",
+      cta: "Importez votre modèle — 1 téléchargement gratuit",
+    },
+    usecases: {
+      title: "Conçu pour les professionnels de tous les secteurs",
+      subtitle: "D'un devoir universitaire à un rapport technique au travail — si votre IA peut l'écrire, nous pouvons le convertir en Word.",
+      case1: { title: "Travaux universitaires", desc: "Transformez l'essai ou le chapitre de mémoire rédigé par votre IA en un document au format attendu par votre professeur." },
+      case2: { title: "Ingénierie et spécifications fonctionnelles", desc: "Spécifications et documentation technique structurées, avec tableaux et titres, prêtes à partager avec votre équipe." },
+      case3: { title: "QA / rapports techniques", desc: "Coloration automatique Pass/Fail dans chaque tableau de résultats, directement depuis votre Markdown." },
+    },
+    promptDemo: {
+      title: "Vous ne savez pas quoi demander à votre IA ?",
+      subtitle: "Copiez ce prompt, collez-le dans votre IA, puis déposez la réponse ci-dessus.",
+      promptLines: [
+        "Rédige un rapport formel sur : <ton sujet ici>",
+        "",
+        "Structure-le ainsi :",
+        "- Un titre (H1) et une courte introduction",
+        "- 2 à 4 sections avec des titres H2 clairs",
+        "- Des paragraphes courts — pas de pavés de texte",
+        "- Au moins un tableau s'il y a des données à comparer",
+        "- Une courte conclusion à la fin",
+        "",
+        "IMPORTANT : donne-moi TOUT le rapport en Markdown brut (#, ##, tableaux)",
+        "dans un seul bloc de code, en texte brut — NE le rends PAS.",
+        "J'ai besoin de copier le code Markdown lui-même.",
+      ],
+      note: "Astuce : sur Gemini, ajoute \"affiche-le dans un bloc de code (texte brut)\" sinon il formatera le texte au lieu de te donner le Markdown brut. ChatGPT et Claude le renvoient généralement déjà brut — chaque IA est un peu différente.",
+      copyBtn: "Copier le prompt",
+      copiedBtn: "Copié ✔",
+    },
+    apiTeaser: {
+      title: "Intégrez-le dans votre propre produit",
+      desc: "Un endpoint machine à machine authentifié par une clé API. À intégrer dans vos pipelines CI/CD ou votre propre SaaS.",
+      cta: "Voir la documentation de l'API",
+    },
+    footer: { tagline: "AI to Word — collez la réponse de votre IA, téléchargez Word. Sans tags, sans JSON, sans code." },
+    auth: {
+      loginTitle: "Connexion", signupTitle: "Créer un compte",
+      emailPlaceholder: "Email", passwordPlaceholder: "Mot de passe", passwordPlaceholderMin: "Mot de passe (min. 6 caractères)",
+      loginSubmit: "Connexion", signupSubmit: "Créer un compte",
+      switchToSignup: "Pas de compte ? Inscrivez-vous", switchToLogin: "Déjà un compte ? Connectez-vous",
+      notConfigured: "Supabase n'est pas encore configuré.",
+      checkEmailTitle: "Consultez votre boîte mail",
+      checkEmailDesc: "Nous avons envoyé un lien de confirmation à votre email. Confirmez-le, puis connectez-vous.",
+      closeBtn: "Fermer",
+    },
+    wizard: {
+      title: "Votre modèle d'entreprise",
+      backToLanding: "← Retour à l'accueil",
+      myTemplatesTitle: "Vos modèles",
+      noTemplates: "Vous n'avez pas encore importé de modèle.",
+      newTemplateBtn: "Importer un nouveau modèle",
+      useBtn: "Utiliser ce modèle",
+      editBtn: "Modifier",
+      deleteBtn: "Supprimer",
+      studioLabel: "Studio de modèles",
+      tocGuideTitle: "Astuce : actualisez les champs après avoir ouvert le fichier",
+      tocGuideDesc: "Si votre modèle contient une table des matières ou d'autres champs Word, Word ne les met pas à jour automatiquement. Faites un clic droit dessus et choisissez « Mettre à jour les champs » (ou appuyez sur F9) après avoir ouvert votre document.",
+      tocGuideMenuItem: "Mettre à jour les champs",
+      stepUpload: "Import",
+      stepMap: "Associer les styles",
+      stepConvert: "Convertir",
+      step1Title: "Étape 1 — Importez votre .dotx/.docx",
+      step1Desc: "Nous le conservons tel quel, rien n'est modifié.",
+      nameLabel: "Nom du modèle",
+      uploadBtn: "Importer",
+      chooseFile: "Choisissez d'abord un fichier .docx/.dotx.",
+      step2Title: "Étape 2 — Association des styles",
+      step2Desc: "Nous avons essayé de détecter vos styles automatiquement. Ajustez ce qui est incorrect ou manquant — un choix manuel reste toujours possible.",
+      mappingHeading1: "Style pour Titre 1",
+      mappingHeading2: "Style pour Titre 2",
+      mappingHeading3: "Style pour Titre 3",
+      mappingTable: "Style de tableau",
+      notDetected: "— non détecté, choisissez-en un —",
+      saveMappingBtn: "Enregistrer et continuer",
+      step3Title: "Étape 3 — Conversion de test",
+      step3Desc: "Collez du Markdown et générez un vrai .docx avec votre modèle.",
+      convertBtn: "Convertir avec mon modèle",
+      trialNote: "Plan gratuit : votre premier téléchargement avec un modèle personnalisé est gratuit. Ensuite, un abonnement Pro est nécessaire.",
+      trialUsedTitle: "Vous avez déjà utilisé votre essai gratuit",
+      upgradeMessage: "Passez à Pro pour des téléchargements illimités avec votre propre modèle.",
+      upgradeCta: "Passer à Pro",
+      convertedOk: "Document téléchargé — c'était votre téléchargement d'essai gratuit.",
+      convertedOkPro: "Document téléchargé ✔",
+    },
+    pricing: {
+      title: "Tarifs simples",
+      subtitle: "Commencez gratuitement. Passez à l'offre supérieure seulement si vous avez besoin de votre propre modèle.",
+      free: { name: "Gratuit", price: "0 €", period: "pour toujours", desc: "L'accroche — meilleur que les autres convertisseurs gratuits du marché.",
+        f1: "Conversions illimitées", f2: "Sans inscription", f3: "Modèle générique propre", f4: "Coloration Pass/Fail dans les tableaux",
+        cta: "Commencer à convertir" },
+      pro: { name: "Pro", price: "3,99 €", period: "/ mois", desc: "Moins qu'un café par mois — pour votre propre modèle d'entreprise.",
+        f1: "Modèle .dotx/.docx personnel et persistant", f2: "Association automatique des styles (avec réglage manuel)", f3: "Règles conditionnelles (Pass/Fail)", f4: "1 téléchargement d'essai gratuit avant de payer",
+        cta: "Importez votre modèle", currentPlan: "Votre offre actuelle" },
+      api: { name: "API", price: "Paiement à l'usage", period: "", desc: "Pour les pipelines CI/CD et les intégrations produit.",
+        f1: "Endpoint machine à machine", f2: "Authentifié par clé API", f3: "Sans coût par utilisateur", f4: "Conçu pour l'automatisation",
+        cta: "Contactez-nous" },
+      faqTitle: "Questions",
+      devLink: "Vous développez un produit ou un pipeline CI/CD ? Voir l'accès API →",
+      faq1q: "Le plan gratuit est-il vraiment illimité ?", faq1a: "Oui. Il est limité par IP uniquement pour stopper les scripts abusifs, jamais pour limiter une personne réelle.",
+      faq2q: "Que se passe-t-il après mon téléchargement Pro gratuit ?", faq2a: "Vous verrez une invitation claire à passer à Pro — jamais un aperçu flouté ou factice. Le premier téléchargement est toujours le fichier réel et complet.",
+      faq3q: "Puis-je annuler à tout moment ?", faq3a: "Oui. Pro est facturé mensuellement, annulez quand vous voulez — sans engagement.",
+    },
+    api: {
+      title: "Intégrez la génération de documents dans votre produit",
+      subtitle: "Un seul endpoint authentifié qui transforme du Markdown en .docx. Aucun SDK requis — HTTP simple.",
+      authTitle: "Authentification",
+      authDesc: "Chaque requête nécessite un en-tête X-API-Key. Les clés sont émises par compte et ne sont jamais stockées en clair de notre côté.",
+      endpointTitle: "Endpoint",
+      requestTitle: "Exemple de requête",
+      responseTitle: "Réponse",
+      responseDesc: "Un fichier .docx binaire (Content-Type : application/vnd.openxmlformats-officedocument.wordprocessingml.document), prêt à enregistrer ou à servir à vos utilisateurs.",
+      paramsTitle: "Champs du formulaire",
+      paramMarkdown: "la source Markdown (obligatoire)",
+      paramTemplate: "ID de modèle du catalogue, ou à omettre pour le modèle par défaut",
+      paramTitle: "titre du document (utilisé s'il n'est pas déjà dans le frontmatter)",
+      paramAuthor: "auteur du document (utilisé s'il n'est pas déjà dans le frontmatter)",
+      paramFilename: "nom du fichier de sortie, sans extension",
+      pricingTitle: "Tarifs de l'API",
+      pricingPlan: "API B2B",
+      pricingPrice: "19,00 €",
+      pricingPeriod: "/ mois",
+      pricingOverage: "+ 0,05 € par conversion au-delà de votre quota mensuel",
+      pricingF1: "Endpoint serveur à serveur (X-API-Key)",
+      pricingF2: "Pour les intégrateurs de logiciels tiers",
+      pricingF3: "Sans coût par utilisateur",
+      pricingF4: "Facturation à l'usage, annulez à tout moment",
+      ctaTitle: "Vous voulez y accéder ?",
+      ctaDesc: "Parlez-nous de votre cas d'usage et nous vous fournirons une clé.",
+      cta: "Demander l'accès API",
+    },
+  },
 };
 
 const state = {
@@ -411,6 +611,14 @@ function t(key) {
   return obj ?? key;
 }
 
+// Ciclo de idiomas del botón: en -> es -> fr -> en... El botón siempre
+// muestra el idioma AL QUE se cambiará al pulsar (no el actual).
+const LANGS = ["en", "es", "fr"];
+
+function nextLang(lang) {
+  return LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length];
+}
+
 function applyI18n() {
   document.documentElement.lang = state.lang;
   document.querySelectorAll("[data-i18n]").forEach((el) => {
@@ -420,14 +628,14 @@ function applyI18n() {
     el.placeholder = t(el.dataset.i18nPlaceholder);
   });
   const toggle = document.getElementById("lang-toggle");
-  if (toggle) toggle.textContent = state.lang === "en" ? "ES" : "EN";
+  if (toggle) toggle.textContent = nextLang(state.lang).toUpperCase();
 }
 
 function initLangToggle(onChange) {
   const btn = document.getElementById("lang-toggle");
   if (!btn) return;
   btn.addEventListener("click", () => {
-    state.lang = state.lang === "en" ? "es" : "en";
+    state.lang = nextLang(state.lang);
     localStorage.setItem("formalize_lang", state.lang);
     applyI18n();
     if (onChange) onChange();
@@ -471,6 +679,33 @@ function closeModal(id) {
   if (!el) return;
   el.classList.add("hidden");
   el.classList.remove("flex");
+  if (id === "signup-overlay") resetSignupModal();
+}
+
+/**
+ * Tras un signup sin sesión inmediata (confirmación de email requerida), el
+ * modal cambia a una pantalla de "revisa tu correo" en vez de dejar el
+ * formulario ahí con un mensajito de texto — se restaura al formulario la
+ * próxima vez que se abra (ver closeModal).
+ */
+function resetSignupModal() {
+  const form = document.getElementById("signup-form");
+  const success = document.getElementById("signup-success");
+  if (!form || !success) return;
+  form.classList.remove("hidden");
+  success.classList.add("hidden");
+  const password = document.getElementById("signup-password");
+  if (password) password.value = "";
+}
+
+function showSignupCheckEmail() {
+  const form = document.getElementById("signup-form");
+  const success = document.getElementById("signup-success");
+  if (!form || !success) return;
+  form.classList.add("hidden");
+  success.classList.remove("hidden");
+  const password = document.getElementById("signup-password");
+  if (password) password.value = "";
 }
 
 /**
@@ -534,9 +769,7 @@ async function wireAuthUI(config) {
         return;
       }
       // Sin sesión inmediata: el proyecto exige confirmar el email primero.
-      errorEl.classList.remove("text-red-600");
-      errorEl.classList.add("text-emerald-600");
-      errorEl.textContent = t("auth.accountCreated");
+      showSignupCheckEmail();
     });
   }
 

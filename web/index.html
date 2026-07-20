@@ -43,9 +43,24 @@
   .ai2w-prompt-line { opacity: 0; transform: translateY(6px); }
   .ai2w-prompt.in-view .ai2w-prompt-line { animation: ai2w-line-in 0.4s ease forwards; }
   @keyframes ai2w-line-in { to { opacity: 1; transform: translateY(0); } }
+
+  /* Guía animada del paso 3 del wizard: enseña que los campos de Word (p.ej.
+     un índice) hay que actualizarlos a mano tras abrir el .docx generado
+     (limitación de Word, no del conversor). Cursor + menú contextual en bucle. */
+  .ai2w-toc-page { position: relative; width: 150px; height: 96px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; flex-shrink: 0; }
+  .ai2w-toc-line { height: 6px; background: #e2e8f0; border-radius: 3px; margin-bottom: 7px; }
+  .ai2w-toc-line-title { width: 42%; background: #cbd5e1; }
+  .ai2w-toc-line-target { width: 78%; position: relative; }
+  .ai2w-toc-cursor { position: absolute; left: 62px; top: 60px; color: #0f172a; animation: ai2w-toc-move 3.6s ease-in-out infinite; }
+  .ai2w-toc-menu { position: absolute; left: 46px; top: 6px; opacity: 0; background: #0f172a; color: #fff; font-size: 9.5px; font-weight: 600; padding: 4px 8px; border-radius: 5px; white-space: nowrap; animation: ai2w-toc-pop 3.6s ease-in-out infinite; }
+  @keyframes ai2w-toc-move { 0%, 12% { left: 62px; top: 60px; } 38%, 70% { left: 12px; top: 30px; } 88%, 100% { left: 62px; top: 60px; } }
+  @keyframes ai2w-toc-pop { 0%, 40% { opacity: 0; transform: translateY(4px); } 50%, 78% { opacity: 1; transform: translateY(0); } 92%, 100% { opacity: 0; } }
+
   @media (prefers-reduced-motion: reduce) {
     .ai2w-loading-ring, .ai2w-loading-doc span { animation: none; }
     .ai2w-prompt-line { opacity: 1; transform: none; animation: none; }
+    .ai2w-toc-cursor { animation: none; }
+    .ai2w-toc-menu { animation: none; opacity: 1; }
   }
 </style>
 </head>
@@ -336,11 +351,21 @@
       <h2 class="font-semibold text-slate-900" data-i18n="auth.signupTitle">Create account</h2>
       <span class="close-x cursor-pointer text-slate-400" data-close="signup-overlay">✕</span>
     </div>
-    <div id="signup-error" class="text-red-600 text-xs min-h-[1rem] mb-2"></div>
-    <input type="email" id="signup-email" data-i18n-placeholder="auth.emailPlaceholder" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2 text-sm" />
-    <input type="password" id="signup-password" data-i18n-placeholder="auth.passwordPlaceholderMin" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-3 text-sm" />
-    <button id="signup-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-3 py-2 text-sm" data-i18n="auth.signupSubmit">Create account</button>
-    <p class="text-xs text-emerald-700 mt-3 cursor-pointer switch-link" data-switch="login-overlay" data-close="signup-overlay" data-i18n="auth.switchToLogin">Already have an account? Log in</p>
+    <div id="signup-form">
+      <div id="signup-error" class="text-red-600 text-xs min-h-[1rem] mb-2"></div>
+      <input type="email" id="signup-email" data-i18n-placeholder="auth.emailPlaceholder" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-2 text-sm" />
+      <input type="password" id="signup-password" data-i18n-placeholder="auth.passwordPlaceholderMin" class="w-full border border-slate-300 rounded-lg px-3 py-2 mb-3 text-sm" />
+      <button id="signup-submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-3 py-2 text-sm" data-i18n="auth.signupSubmit">Create account</button>
+      <p class="text-xs text-emerald-700 mt-3 cursor-pointer switch-link" data-switch="login-overlay" data-close="signup-overlay" data-i18n="auth.switchToLogin">Already have an account? Log in</p>
+    </div>
+    <div id="signup-success" class="hidden text-center py-2">
+      <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      </div>
+      <h3 class="font-semibold text-slate-900 mb-1" data-i18n="auth.checkEmailTitle">Check your inbox</h3>
+      <p class="text-sm text-slate-500 mb-4" data-i18n="auth.checkEmailDesc">We've sent a confirmation link to your email. Confirm it, then log in.</p>
+      <button class="border border-slate-300 rounded-lg px-4 py-2 text-sm font-semibold text-slate-700" data-close="signup-overlay" data-i18n="auth.closeBtn">Close</button>
+    </div>
   </div>
 </div>
 
@@ -454,18 +479,21 @@ document.getElementById("prompt-copy-btn").addEventListener("click", async (e) =
 // objetivo"), y en su lugar mostramos un panel "Tu espacio Pro" con
 // herramientas útiles (ver ronda de UX de julio, puntos 3/9).
 // ---------------------------------------------------------------------
-async function loadProRecentTemplates() {
-  const box = document.getElementById("pro-recent");
-  box.innerHTML = "";
-  let templates = [];
+async function fetchOwnTemplates() {
   try {
     const headers = await getAuthHeader();
     const resp = await fetch(`${CONFIG.API_BASE_URL}/api/pro/templates`, { headers });
-    if (resp.ok) templates = await resp.json();
+    if (resp.ok) return await resp.json();
   } catch (err) {
-    // best-effort: si falla, dejamos solo los botones de acción.
+    // best-effort: si falla, se degrada a listas vacías.
   }
-  if (!Array.isArray(templates) || templates.length === 0) {
+  return [];
+}
+
+function renderProRecentChips(templates) {
+  const box = document.getElementById("pro-recent");
+  box.innerHTML = "";
+  if (templates.length === 0) {
     const empty = document.createElement("span");
     empty.className = "text-slate-400 text-xs";
     empty.textContent = t("proToolbox.empty");
@@ -484,15 +512,38 @@ async function loadProRecentTemplates() {
   });
 }
 
+// ---------------------------------------------------------------------
+// Las plantillas propias del usuario Pro también aparecen en el desplegable
+// "Plantilla" del conversor genérico (antes solo mostraba el catálogo
+// whitelisted) — así no hace falta pasar por el studio para usarlas.
+// ---------------------------------------------------------------------
+function populateOwnTemplatesDropdown(templates) {
+  const select = document.getElementById("template-select");
+  select.querySelectorAll("optgroup[data-own-templates]").forEach((g) => g.remove());
+  if (templates.length === 0) return;
+  const group = document.createElement("optgroup");
+  group.dataset.ownTemplates = "true";
+  group.label = t("hero.myTemplatesGroup");
+  templates.forEach((tpl) => {
+    const opt = document.createElement("option");
+    opt.value = `own:${tpl.id}`;
+    opt.textContent = tpl.name;
+    group.appendChild(opt);
+  });
+  select.appendChild(group);
+}
+
 let proAutoRouted = false;
-document.addEventListener("ai2w:auth", (e) => {
+document.addEventListener("ai2w:auth", async (e) => {
   const isPaid = e.detail.tier === "pro" || e.detail.tier === "enterprise";
   document.getElementById("upgrade-hook-section").classList.toggle("hidden", isPaid);
   document.getElementById("usecases-section").classList.toggle("hidden", isPaid);
   document.getElementById("pro-toolbox").classList.toggle("hidden", !isPaid);
   setProEditorBarVisible(isPaid);
   if (isPaid) {
-    loadProRecentTemplates();
+    const templates = await fetchOwnTemplates();
+    renderProRecentChips(templates);
+    populateOwnTemplatesDropdown(templates);
     // Un usuario Pro entra DIRECTO a su studio limpio, no a la landing de
     // marketing con banners. Solo la primera vez que confirmamos que es Pro,
     // para no arrastrarlo de vuelta si pulsa "← Volver al inicio".
@@ -500,6 +551,8 @@ document.addEventListener("ai2w:auth", (e) => {
       proAutoRouted = true;
       if (typeof window.showApp === "function") window.showApp();
     }
+  } else {
+    populateOwnTemplatesDropdown([]);
   }
 });
 
@@ -529,6 +582,27 @@ function stripFrontmatter(md) {
   return md.replace(/^---\n[\s\S]*?\n---\n/, "");
 }
 
+// ---------------------------------------------------------------------
+// Imágenes Pro: el data URI real (puede ser un bloque de texto enorme) se
+// guarda aparte y en el editor solo se ve un placeholder corto
+// (attachment://img-N) — se resuelve de vuelta al data URI real justo antes
+// de renderizar la preview o de enviar el Markdown al backend, así que el
+// .docx generado sigue recibiendo la imagen real (ver converter/builder.py).
+// ---------------------------------------------------------------------
+const imageAttachments = new Map();
+let imageAttachmentSeq = 0;
+const IMAGE_ATTACHMENT_RE = /attachment:\/\/(img-\d+)/g;
+
+function resolveImageAttachments(md) {
+  return md.replace(IMAGE_ATTACHMENT_RE, (match, id) => imageAttachments.get(id) || match);
+}
+
+function registerImageAttachment(dataUrl) {
+  const id = `img-${++imageAttachmentSeq}`;
+  imageAttachments.set(id, dataUrl);
+  return id;
+}
+
 function colorizePassFail(root) {
   root.querySelectorAll("td").forEach((td) => {
     const upper = td.textContent.trim().toUpperCase();
@@ -542,7 +616,7 @@ function colorizePassFail(root) {
 }
 
 function renderPreview() {
-  const raw = stripFrontmatter(editor.value || "");
+  const raw = resolveImageAttachments(stripFrontmatter(editor.value || ""));
   if (typeof marked === "undefined") {
     preview.textContent = raw;
     return;
@@ -682,7 +756,8 @@ function toggleEditorPreview() {
 }
 
 function insertImageAtCursor(dataUrl, altText) {
-  insertAtCursor(`![${altText}](${dataUrl})`);
+  const id = registerImageAttachment(dataUrl);
+  insertAtCursor(`![${altText}](attachment://${id})`);
 }
 
 function handleProImageUpload(file, errorEl) {
@@ -783,13 +858,80 @@ function setStatus(text, kind) {
   statusMsg.className = "text-xs mt-2 min-h-[1rem] " + (kind === "error" ? "text-red-600" : kind === "ok" ? "text-emerald-600" : "text-slate-500");
 }
 
-async function runConversion() {
+function triggerBlobDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------
+// Conversión con una plantilla Pro propia (elegida en el desplegable de
+// arriba, no en el studio) — usa el endpoint autenticado de pro_templates.py,
+// nunca /api/convert (que jamás debe aceptar una plantilla de cliente, ver
+// CLAUDE.md §2).
+// ---------------------------------------------------------------------
+async function runOwnTemplateConversion(templateId, markdownValue, titleValue, filenameValue) {
   const formData = new FormData();
-  formData.append("markdown", editor.value || "");
-  formData.append("template", document.getElementById("template-select").value);
-  const titleValue = document.getElementById("title-input").value.trim();
+  formData.append("markdown", markdownValue);
   if (titleValue) formData.append("title", titleValue);
-  formData.append("filename", document.getElementById("filename-input").value || "documento");
+  formData.append("filename", filenameValue);
+
+  try {
+    const headers = await getAuthHeader();
+    const resp = await fetch(`${CONFIG.API_BASE_URL}/api/pro/templates/${templateId}/convert`, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+
+    if (resp.status === 402) {
+      const payload = await resp.json().catch(() => ({}));
+      statusMsg.innerHTML = "";
+      const msg = document.createElement("span");
+      msg.className = "text-amber-600";
+      msg.textContent = (payload.detail || t("wizard.upgradeMessage")) + " ";
+      const cta = document.createElement("a");
+      cta.href = "/pricing";
+      cta.className = "text-emerald-700 font-semibold hover:underline";
+      cta.textContent = t("wizard.upgradeCta");
+      statusMsg.append(msg, cta);
+      return;
+    }
+    if (!resp.ok) {
+      const payload = await resp.json().catch(() => ({}));
+      setStatus(payload.detail || payload.error || `Error ${resp.status}`, "error");
+      return;
+    }
+
+    const blob = await resp.blob();
+    triggerBlobDownload(blob, `${filenameValue}.docx`);
+    setStatus(t("hero.downloaded"), "ok");
+  } catch (err) {
+    setStatus(`${err.message}`, "error");
+  }
+}
+
+async function runConversion() {
+  const templateValue = document.getElementById("template-select").value;
+  const titleValue = document.getElementById("title-input").value.trim();
+  const filenameValue = document.getElementById("filename-input").value || "documento";
+  const markdownValue = resolveImageAttachments(editor.value || "");
+
+  if (templateValue.startsWith("own:")) {
+    await runOwnTemplateConversion(templateValue.slice(4), markdownValue, titleValue, filenameValue);
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("markdown", markdownValue);
+  formData.append("template", templateValue);
+  if (titleValue) formData.append("title", titleValue);
+  formData.append("filename", filenameValue);
 
   try {
     const resp = await fetch(`${CONFIG.API_BASE_URL}/api/convert`, { method: "POST", body: formData });
@@ -806,14 +948,7 @@ async function runConversion() {
     }
 
     const blob = await resp.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${document.getElementById("filename-input").value || "documento"}.docx`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    triggerBlobDownload(blob, `${filenameValue}.docx`);
     setStatus(t("hero.downloaded"), "ok");
   } catch (err) {
     setStatus(`${err.message}`, "error");
