@@ -128,6 +128,15 @@
   </div>
 </header>
 
+<!-- Banner de beta gratuita (validación técnica antes de facturar, ver
+     BETA_FREE_MODE en shared.js). No borra la política de precios — solo
+     la oculta mientras esté activo; ver pricing.html para reactivarla. -->
+<div data-beta-show class="hidden bg-emerald-600 text-white text-xs sm:text-sm text-center py-2 px-3">
+  <span class="font-bold uppercase tracking-wide" data-i18n="beta.badge">FREE BETA</span>
+  <span class="mx-1.5 opacity-60">·</span>
+  <span data-i18n="beta.bannerText">AI to Word is in free beta — every feature, including your own corporate template, is free while we test the product. Sign up to lock in early access.</span>
+</div>
+
 <div id="warmup-banner" class="hidden bg-emerald-50 text-emerald-700 text-xs text-center py-1.5 px-3" data-i18n="warmup.message">
   Waking up the conversion engine — first request may take a few extra seconds…
 </div>
@@ -410,6 +419,14 @@ const CONFIG = {
   SUPABASE_ANON_KEY: "__SUPABASE_ANON_KEY__",
   API_BASE_URL: "__API_BASE_URL__" || "",
 };
+
+// En beta gratuita, el CTA de "sube tu plantilla" ya no promete "1 descarga
+// gratis" (sería falso: es ilimitado y gratis para todos, ver auth.py
+// BETA_FREE_MODE) — se reasigna la clave i18n antes del primer render para
+// que quede en sync automáticamente con los cambios de idioma.
+if (BETA_FREE_MODE) {
+  document.getElementById("compare-cta").dataset.i18n = "beta.compareCta";
+}
 
 applyI18n();
 initLangToggle(() => { renderPreview(); renderPromptLines(); });

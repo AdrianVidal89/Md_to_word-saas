@@ -2,9 +2,31 @@
    i18n, sesión de Supabase (con guardas defensivas: un fallo de CDN nunca
    debe romper el resto de la página), y los modales de login/signup. */
 
+// ---------------------------------------------------------------------
+// MODO BETA GRATUITA (validación técnica antes de facturar). Mientras esté
+// en `true`: se muestra un banner "gratis en beta" en toda la web, se oculta
+// la política de precios (que sigue en el HTML, comentada) y no se enseña
+// ningún muro de pago / "Hazte Pro". Va en paralelo con BETA_FREE_MODE del
+// backend (auth.py), que levanta el 402. Para empezar a cobrar: poner esto
+// en `false` y descomentar los bloques de precios marcados con
+// "BETA: bloque de precios oculto" en pricing.html / api-access.html.
+// ---------------------------------------------------------------------
+const BETA_FREE_MODE = true;
+
 const I18N = {
   en: {
     warmup: { message: "Waking up the conversion engine — first request may take a few extra seconds…" },
+    beta: {
+      badge: "FREE BETA",
+      bannerText: "AI to Word is in free beta — every feature, including your own corporate template, is free while we test the product. Sign up to lock in early access.",
+      wizardNote: "Beta: unlimited downloads with your own template, free for everyone right now.",
+      pricingTitle: "Free during the beta",
+      pricingDesc: "We're in early beta and validating the product — everything is free for now, including your own corporate template. Pricing will appear here once the beta ends; sign up today and we'll give you a heads-up before anything changes.",
+      pricingCta: "Start converting for free",
+      apiTitle: "Free API access during the beta",
+      apiDesc: "We're validating the product — API access is free during the beta. Tell us about your use case and we'll set you up with a key; we'll give you a heads-up before any pricing kicks in.",
+      compareCta: "Upload your template — free during the beta",
+    },
     nav: { home: "Home", pricing: "Pricing", api: "API", login: "Log in", signup: "Sign up", logout: "Log out", myTemplates: "My templates" },
     hero: {
       eyebrow: "Free forever · No signup · No tags, no JSON",
@@ -186,6 +208,17 @@ const I18N = {
   },
   es: {
     warmup: { message: "Despertando el motor de conversión — la primera petición puede tardar unos segundos más…" },
+    beta: {
+      badge: "BETA GRATIS",
+      bannerText: "AI to Word está en beta gratuita — todas las funciones, incluida tu propia plantilla corporativa, son gratis mientras probamos el producto. Regístrate para asegurar tu acceso anticipado.",
+      wizardNote: "Beta: descargas ilimitadas con tu propia plantilla, gratis para todos ahora mismo.",
+      pricingTitle: "Gratis durante la beta",
+      pricingDesc: "Estamos en beta y validando el producto — todo es gratis por ahora, incluida tu propia plantilla corporativa. Los precios aparecerán aquí cuando termine la beta; regístrate hoy y te avisaremos antes de que cambie nada.",
+      pricingCta: "Empieza a convertir gratis",
+      apiTitle: "Acceso a la API gratis durante la beta",
+      apiDesc: "Estamos validando el producto — el acceso a la API es gratis durante la beta. Cuéntanos tu caso de uso y te damos una clave; te avisaremos antes de que entre en vigor cualquier precio.",
+      compareCta: "Sube tu plantilla — gratis durante la beta",
+    },
     nav: { home: "Inicio", pricing: "Precios", api: "API", login: "Entrar", signup: "Crear cuenta", logout: "Salir", myTemplates: "Mis plantillas" },
     hero: {
       eyebrow: "Gratis para siempre · Sin registro · Sin tags, sin JSON",
@@ -367,6 +400,17 @@ const I18N = {
   },
   fr: {
     warmup: { message: "Réveil du moteur de conversion — la première requête peut prendre quelques secondes de plus…" },
+    beta: {
+      badge: "BÊTA GRATUITE",
+      bannerText: "AI to Word est en bêta gratuite — toutes les fonctionnalités, y compris votre propre modèle d'entreprise, sont gratuites pendant que nous testons le produit. Inscrivez-vous pour garantir votre accès anticipé.",
+      wizardNote: "Bêta : téléchargements illimités avec votre propre modèle, gratuit pour tout le monde en ce moment.",
+      pricingTitle: "Gratuit pendant la bêta",
+      pricingDesc: "Nous sommes en bêta et validons le produit — tout est gratuit pour le moment, y compris votre propre modèle d'entreprise. Les tarifs apparaîtront ici une fois la bêta terminée ; inscrivez-vous dès aujourd'hui et nous vous préviendrons avant tout changement.",
+      pricingCta: "Commencer à convertir gratuitement",
+      apiTitle: "Accès API gratuit pendant la bêta",
+      apiDesc: "Nous validons le produit — l'accès à l'API est gratuit pendant la bêta. Parlez-nous de votre cas d'usage et nous vous fournirons une clé ; nous vous préviendrons avant l'entrée en vigueur d'un quelconque tarif.",
+      compareCta: "Importez votre modèle — gratuit pendant la bêta",
+    },
     nav: { home: "Accueil", pricing: "Tarifs", api: "API", login: "Connexion", signup: "S'inscrire", logout: "Déconnexion", myTemplates: "Mes modèles" },
     hero: {
       eyebrow: "Gratuit pour toujours · Sans inscription · Sans tags, sans JSON",
@@ -548,6 +592,17 @@ const I18N = {
   },
   pt: {
     warmup: { message: "A acordar o motor de conversão — o primeiro pedido pode demorar mais alguns segundos…" },
+    beta: {
+      badge: "BETA GRÁTIS",
+      bannerText: "O AI to Word está em beta gratuita — todas as funcionalidades, incluindo o seu próprio modelo corporativo, são grátis enquanto testamos o produto. Registe-se para garantir o seu acesso antecipado.",
+      wizardNote: "Beta: descargas ilimitadas com o seu próprio modelo, grátis para todos agora mesmo.",
+      pricingTitle: "Grátis durante a beta",
+      pricingDesc: "Estamos em beta e a validar o produto — tudo é grátis por agora, incluindo o seu próprio modelo corporativo. Os preços aparecerão aqui quando a beta terminar; registe-se hoje e avisamo-lo antes de qualquer mudança.",
+      pricingCta: "Começar a converter grátis",
+      apiTitle: "Acesso à API grátis durante a beta",
+      apiDesc: "Estamos a validar o produto — o acesso à API é grátis durante a beta. Conte-nos o seu caso de uso e damos-lhe uma chave; avisamo-lo antes de qualquer preço entrar em vigor.",
+      compareCta: "Carregue o seu modelo — grátis durante a beta",
+    },
     nav: { home: "Início", pricing: "Preços", api: "API", login: "Entrar", signup: "Criar conta", logout: "Sair", myTemplates: "Os meus modelos" },
     hero: {
       eyebrow: "Grátis para sempre · Sem registo · Sem tags, sem JSON",
@@ -729,6 +784,17 @@ const I18N = {
   },
   de: {
     warmup: { message: "Die Konvertierungs-Engine wird gestartet — die erste Anfrage kann ein paar Sekunden länger dauern…" },
+    beta: {
+      badge: "KOSTENLOSE BETA",
+      bannerText: "AI to Word befindet sich in der kostenlosen Beta — alle Funktionen, einschließlich Ihrer eigenen Unternehmensvorlage, sind kostenlos, während wir das Produkt testen. Registrieren Sie sich, um sich den frühen Zugang zu sichern.",
+      wizardNote: "Beta: unbegrenzte Downloads mit Ihrer eigenen Vorlage, momentan für alle kostenlos.",
+      pricingTitle: "Kostenlos während der Beta",
+      pricingDesc: "Wir befinden uns in der Beta-Phase und validieren das Produkt — momentan ist alles kostenlos, einschließlich Ihrer eigenen Unternehmensvorlage. Die Preise erscheinen hier, sobald die Beta endet; registrieren Sie sich noch heute, und wir informieren Sie, bevor sich etwas ändert.",
+      pricingCta: "Jetzt kostenlos konvertieren",
+      apiTitle: "Kostenloser API-Zugang während der Beta",
+      apiDesc: "Wir validieren das Produkt — der API-Zugang ist während der Beta kostenlos. Erzählen Sie uns von Ihrem Anwendungsfall, und wir richten Ihnen einen Schlüssel ein; wir informieren Sie, bevor eine Preisgestaltung in Kraft tritt.",
+      compareCta: "Vorlage hochladen — kostenlos während der Beta",
+    },
     nav: { home: "Start", pricing: "Preise", api: "API", login: "Anmelden", signup: "Registrieren", logout: "Abmelden", myTemplates: "Meine Vorlagen" },
     hero: {
       eyebrow: "Für immer kostenlos · Keine Registrierung · Keine Tags, kein JSON",
@@ -910,6 +976,17 @@ const I18N = {
   },
   zh: {
     warmup: { message: "正在唤醒转换引擎——第一次请求可能需要多几秒钟…" },
+    beta: {
+      badge: "免费测试版",
+      bannerText: "AI to Word 目前处于免费测试阶段——在我们测试产品期间，所有功能（包括使用你自己的企业模板）都是免费的。立即注册，抢先体验。",
+      wizardNote: "测试版：使用你自己的模板无限次下载，目前对所有人免费。",
+      pricingTitle: "测试期间完全免费",
+      pricingDesc: "我们目前处于测试阶段，正在验证产品——目前一切都是免费的，包括使用你自己的企业模板。测试结束后价格信息将显示在这里；今天就注册，我们会在有任何变化前通知你。",
+      pricingCta: "免费开始转换",
+      apiTitle: "测试期间 API 访问免费",
+      apiDesc: "我们正在验证产品——测试期间 API 访问是免费的。告诉我们你的使用场景，我们会为你开通密钥；在任何收费生效前我们都会提前通知你。",
+      compareCta: "上传你的模板——测试期间免费",
+    },
     nav: { home: "首页", pricing: "价格", api: "API", login: "登录", signup: "注册", logout: "退出登录", myTemplates: "我的模板" },
     hero: {
       eyebrow: "永久免费 · 无需注册 · 无标签，无 JSON",
@@ -1141,6 +1218,18 @@ function t(key) {
   return obj ?? key;
 }
 
+// Modo beta gratuita (ver BETA_FREE_MODE arriba): [data-beta-show] solo se
+// ve en beta, [data-beta-hide] solo se ve fuera de beta. Se reaplica junto
+// con el i18n (mismo punto de entrada, siempre en sync tras cada render).
+function applyBetaMode() {
+  document.querySelectorAll("[data-beta-show]").forEach((el) => {
+    el.classList.toggle("hidden", !BETA_FREE_MODE);
+  });
+  document.querySelectorAll("[data-beta-hide]").forEach((el) => {
+    el.classList.toggle("hidden", BETA_FREE_MODE);
+  });
+}
+
 function applyI18n() {
   document.documentElement.lang = state.lang;
   document.querySelectorAll("[data-i18n]").forEach((el) => {
@@ -1151,6 +1240,7 @@ function applyI18n() {
   });
   const select = document.getElementById("lang-select");
   if (select) select.value = state.lang;
+  applyBetaMode();
 }
 
 function initLangToggle(onChange) {

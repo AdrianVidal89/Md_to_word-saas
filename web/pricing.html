@@ -3,12 +3,20 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- BETA: title/descripción ajustados a "gratis en beta" — el original con
+     precio (€3.99/mes) queda comentado debajo, listo para restaurar cuando
+     BETA_FREE_MODE vuelva a false.
 <title>Pricing — AI to Word</title>
 <meta name="description" content="AI to Word pricing: unlimited free conversion, Pro at €3.99/month for your own corporate template, and metered API access for developers." />
-<link rel="canonical" href="__SITE_URL__/pricing" />
-<meta property="og:type" content="website" />
 <meta property="og:title" content="Pricing — AI to Word" />
 <meta property="og:description" content="Free unlimited conversion, Pro at €3.99/month, and metered API access." />
+-->
+<title>Free beta — AI to Word</title>
+<meta name="description" content="AI to Word is in free beta: unlimited conversion and your own corporate template, free for everyone while we validate the product." />
+<link rel="canonical" href="__SITE_URL__/pricing" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Free beta — AI to Word" />
+<meta property="og:description" content="Free during the beta: unlimited conversion and your own corporate template." />
 <meta property="og:url" content="__SITE_URL__/pricing" />
 <meta property="og:image" content="__SITE_URL__/assets/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
@@ -58,7 +66,31 @@
   </div>
 </header>
 
+<div data-beta-show class="hidden bg-emerald-600 text-white text-xs sm:text-sm text-center py-2 px-3">
+  <span class="font-bold uppercase tracking-wide" data-i18n="beta.badge">FREE BETA</span>
+  <span class="mx-1.5 opacity-60">·</span>
+  <span data-i18n="beta.bannerText">AI to Word is in free beta — every feature, including your own corporate template, is free while we test the product. Sign up to lock in early access.</span>
+</div>
+
 <main class="max-w-6xl mx-auto px-4 py-14">
+  <!-- BETA: mensaje "gratis durante la beta" — sustituye a la política de
+       precios de abajo mientras BETA_FREE_MODE esté activo (ver shared.js).
+       No se ha borrado nada: para volver a cobrar, pon BETA_FREE_MODE=false
+       en shared.js Y en auth.py, y descomenta el bloque de precios de abajo. -->
+  <div data-beta-show class="hidden max-w-xl mx-auto text-center py-6">
+    <span class="inline-block bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full mb-4" data-i18n="beta.badge">FREE BETA</span>
+    <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3" data-i18n="beta.pricingTitle">Free during the beta</h1>
+    <p class="text-slate-500 mb-8" data-i18n="beta.pricingDesc">We're in early beta and validating the product — everything is free for now, including your own corporate template. Pricing will appear here once the beta ends; sign up today and we'll give you a heads-up before anything changes.</p>
+    <a href="/" class="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-6 py-3 text-sm shadow-sm" data-i18n="beta.pricingCta">Start converting for free</a>
+    <p class="mt-8">
+      <a href="/api-access" class="text-sm text-slate-500 hover:text-emerald-700 font-medium" data-i18n="pricing.devLink">Building a product or CI/CD pipeline? See API access →</a>
+    </p>
+  </div>
+
+  <!-- BETA: bloque de precios oculto (validación técnica sin cobrar todavía,
+       ver BETA_FREE_MODE en shared.js/auth.py). Para reactivar el cobro:
+       1) descomenta este bloque, 2) borra/oculta el bloque "gratis durante
+       la beta" de arriba, 3) BETA_FREE_MODE=false en shared.js y auth.py.
   <div class="text-center mb-12">
     <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2" data-i18n="pricing.title">Simple pricing</h1>
     <p class="text-slate-500" data-i18n="pricing.subtitle">Start free. Upgrade only when you need your own template.</p>
@@ -118,6 +150,7 @@
       </div>
     </div>
   </div>
+  -->
 </main>
 
 <footer class="border-t border-slate-200">
@@ -181,32 +214,38 @@ applyI18n();
 initLangToggle();
 wireAuthUI(CONFIG);
 
-document.getElementById("pricing-pro-cta").addEventListener("click", () => {
-  if (state.session) {
-    window.location.href = "/#app";
-  } else {
-    openModal("signup-overlay");
-  }
-});
+// El bloque de precios (y sus botones pricing-pro-cta/pricing-pro-ribbon)
+// está comentado en el HTML mientras dura la beta gratuita — ver
+// BETA_FREE_MODE arriba. Este cableado solo tiene sentido, y solo se ejecuta,
+// cuando ese bloque vuelva a estar descomentado (BETA_FREE_MODE = false).
+if (!BETA_FREE_MODE) {
+  document.getElementById("pricing-pro-cta").addEventListener("click", () => {
+    if (state.session) {
+      window.location.href = "/#app";
+    } else {
+      openModal("signup-overlay");
+    }
+  });
 
-// Quien ya es Pro/Enterprise no necesita que le sigan vendiendo el plan —
-// ver punto 9 de la ronda de UX de julio.
-document.addEventListener("ai2w:auth", (e) => {
-  const isPaid = e.detail.tier === "pro" || e.detail.tier === "enterprise";
-  const cta = document.getElementById("pricing-pro-cta");
-  const ribbon = document.getElementById("pricing-pro-ribbon");
-  if (isPaid) {
-    cta.textContent = t("pricing.pro.currentPlan");
-    cta.disabled = true;
-    cta.classList.add("opacity-60", "cursor-default");
-    ribbon.classList.add("hidden");
-  } else {
-    cta.textContent = t("pricing.pro.cta");
-    cta.disabled = false;
-    cta.classList.remove("opacity-60", "cursor-default");
-    ribbon.classList.remove("hidden");
-  }
-});
+  // Quien ya es Pro/Enterprise no necesita que le sigan vendiendo el plan —
+  // ver punto 9 de la ronda de UX de julio.
+  document.addEventListener("ai2w:auth", (e) => {
+    const isPaid = e.detail.tier === "pro" || e.detail.tier === "enterprise";
+    const cta = document.getElementById("pricing-pro-cta");
+    const ribbon = document.getElementById("pricing-pro-ribbon");
+    if (isPaid) {
+      cta.textContent = t("pricing.pro.currentPlan");
+      cta.disabled = true;
+      cta.classList.add("opacity-60", "cursor-default");
+      ribbon.classList.add("hidden");
+    } else {
+      cta.textContent = t("pricing.pro.cta");
+      cta.disabled = false;
+      cta.classList.remove("opacity-60", "cursor-default");
+      ribbon.classList.remove("hidden");
+    }
+  });
+}
 </script>
 </body>
 </html>
