@@ -58,6 +58,12 @@
   </div>
 </header>
 
+<div data-beta-show class="hidden bg-emerald-600 text-white text-xs sm:text-sm text-center py-2 px-3">
+  <span class="font-bold uppercase tracking-wide" data-i18n="beta.badge">FREE BETA</span>
+  <span class="mx-1.5 opacity-60">·</span>
+  <span data-i18n="beta.bannerText">AI to Word is in free beta — every feature, including your own corporate template, is free while we test the product. Sign up to lock in early access.</span>
+</div>
+
 <main class="max-w-4xl mx-auto px-4 py-14">
   <div class="mb-12">
     <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 mb-3" data-i18n="api.title">Build document generation into your product</h1>
@@ -111,6 +117,11 @@ Revenue is up **12%** this quarter.
     <p class="text-slate-500 text-sm" data-i18n="api.responseDesc">A binary .docx file (Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document), ready to save or stream to your users.</p>
   </section>
 
+  <!-- BETA: precio de la API oculto — sustituido por el aviso "gratis
+       durante la beta" de abajo mientras BETA_FREE_MODE esté activo (ver
+       shared.js/auth.py). Nada se ha borrado: para volver a cobrar,
+       descomenta esta sección, oculta/borra el bloque data-beta-show de
+       abajo, y pon BETA_FREE_MODE=false en shared.js y auth.py.
   <section class="mb-10 border-t border-slate-200 pt-8">
     <h2 class="text-lg font-bold text-slate-900 mb-4" data-i18n="api.pricingTitle">API pricing</h2>
     <div class="border-2 border-emerald-500 rounded-2xl p-6 max-w-md shadow-sm">
@@ -126,6 +137,15 @@ Revenue is up **12%** this quarter.
         <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="api.pricingF3">No per-seat pricing</span></li>
         <li class="flex gap-2"><span class="text-emerald-600">✓</span><span data-i18n="api.pricingF4">Usage-based billing, cancel anytime</span></li>
       </ul>
+    </div>
+  </section>
+  -->
+
+  <section data-beta-show class="hidden mb-10 border-t border-slate-200 pt-8">
+    <h2 class="text-lg font-bold text-slate-900 mb-4" data-i18n="beta.apiTitle">Free API access during the beta</h2>
+    <div class="border-2 border-emerald-500 rounded-2xl p-6 max-w-md shadow-sm">
+      <span class="inline-block bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full mb-3" data-i18n="beta.badge">FREE BETA</span>
+      <p class="text-sm text-slate-500" data-i18n="beta.apiDesc">We're validating the product — API access is free during the beta. Tell us about your use case and we'll set you up with a key; we'll give you a heads-up before any pricing kicks in.</p>
     </div>
   </section>
 

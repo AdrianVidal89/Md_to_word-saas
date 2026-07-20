@@ -137,6 +137,27 @@ Supabase (PostgreSQL managed + Auth + JWT)
 > docs que hablen de un límite de 3/semana o de un flujo de "upsell/caramelo"
 > con `HTTP 402` + blur, es rastro del modelo anterior — no lo reintroduzcas.
 
+> **Beta gratuita (julio 2026, temporal): el muro de pago Pro está
+> desactivado.** Es validación técnica antes de facturar (lanzar, dejar que
+> la gente se registre, medir tracción, sin abrir el melón de la
+> Administración hasta ver si hay demanda real). Se controla con el flag
+> `BETA_FREE_MODE` (default `true`) presente **en paralelo en dos sitios que
+> deben moverse juntos**:
+> - Backend: `auth.py` — `check_custom_template_quota()` devuelve
+>   inmediatamente sin comprobar cuota si `BETA_FREE_MODE` es true, así que
+>   el 402 de la 2ª+ descarga con plantilla propia nunca se dispara.
+> - Frontend: `web/assets/shared.js` — `BETA_FREE_MODE` controla el banner
+>   "gratis en beta" sitewide, el texto del wizard, y qué bloque se ve en
+>   `pricing.html`/`api-access.html` (los bloques `[data-beta-show]`).
+> La política de precios real (planes, precio de la API) **no se ha
+> borrado**: sigue en `pricing.html`/`api-access.html`, comentada dentro de
+> bloques `<!-- BETA: ... -->` explícitos. Para volver a cobrar: 1)
+> `BETA_FREE_MODE=false` (env var) en el backend, 2) `BETA_FREE_MODE = false`
+> en `shared.js`, 3) descomentar esos bloques y quitar/ocultar los
+> `[data-beta-show]` que los sustituyen. No relances el paywall a medias
+> (solo backend o solo frontend) — quedaría un muro de pago invisible o un
+> precio visible que nadie cobra.
+
 ### 5.1 Free (anzuelo): conversión genérica ilimitada, sin registro
 
 - `POST /api/convert` es **público, sin JWT y sin cuota de negocio**. Cualquiera
