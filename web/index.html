@@ -719,9 +719,20 @@ function setProVisualTheme(isPaid) {
 
   const heroMarketing = document.getElementById("hero-marketing");
   heroMarketing.classList.toggle("hidden", isPaid);
+
+  const heroEditor = document.getElementById("hero-editor");
   // Sin el hero, el editor quedaría pegado al header: le damos aire arriba.
-  document.getElementById("hero-editor").classList.toggle("pt-8", isPaid);
-  document.getElementById("hero-editor").classList.toggle("md:pt-12", isPaid);
+  heroEditor.classList.toggle("pt-8", isPaid);
+  heroEditor.classList.toggle("md:pt-12", isPaid);
+  // Modo Pro: el editor ocupa TODO el ancho de la web (quitamos el
+  // max-w-6xl centrado) para un look & feel de "escribir en Word".
+  heroEditor.classList.toggle("max-w-6xl", !isPaid);
+  heroEditor.classList.toggle("max-w-none", isPaid);
+
+  // Word-like: por defecto solo el área de escritura a lo ancho; la vista
+  // previa queda oculta pero se recupera con el botón del ojo. En free se
+  // mantiene el split editor/preview de siempre.
+  setPreviewVisible(!isPaid);
 }
 
 function proToolIcon(inner) {
@@ -755,6 +766,10 @@ function proToolButton(key, onClick) {
   btn.setAttribute("aria-label", t(`proBar.${key}`));
   btn.className = "w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900";
   btn.innerHTML = PRO_TOOL_ICONS[key];
+  // Evita que el botón robe el foco del textarea al pulsarlo: así se
+  // conserva la selección/cursor (sin esto, negrita/cursiva insertaban en
+  // la posición 0) y no se dispara el scroll de "traer a la vista" del foco.
+  btn.addEventListener("mousedown", (e) => e.preventDefault());
   btn.addEventListener("click", onClick);
   return btn;
 }
@@ -765,7 +780,7 @@ function wrapSelection(before, after, placeholder) {
   const value = editor.value;
   const selected = value.slice(start, end) || placeholder;
   editor.value = value.slice(0, start) + before + selected + after + value.slice(end);
-  editor.focus();
+  editor.focus({ preventScroll: true });
   editor.setSelectionRange(start + before.length, start + before.length + selected.length);
   renderPreview();
 }
@@ -775,7 +790,7 @@ function insertAtCursor(text) {
   const end = editor.selectionEnd;
   editor.value = editor.value.slice(0, start) + text + editor.value.slice(end);
   const pos = start + text.length;
-  editor.focus();
+  editor.focus({ preventScroll: true });
   editor.setSelectionRange(pos, pos);
   renderPreview();
 }
@@ -790,17 +805,22 @@ function prefixSelectedLines(makeLine) {
   const lines = value.slice(lineStart, lineEnd).split("\n");
   const newBlock = lines.map((line, i) => makeLine(line, i)).join("\n");
   editor.value = value.slice(0, lineStart) + newBlock + value.slice(lineEnd);
-  editor.focus();
+  editor.focus({ preventScroll: true });
   editor.setSelectionRange(lineStart, lineStart + newBlock.length);
   renderPreview();
 }
 
-function toggleEditorPreview() {
+function setPreviewVisible(visible) {
   const previewCol = document.getElementById("preview-col");
   const grid = document.getElementById("editor-grid");
-  const nowHidden = previewCol.classList.toggle("hidden");
-  grid.classList.toggle("lg:grid-cols-2", !nowHidden);
-  grid.classList.toggle("lg:grid-cols-1", nowHidden);
+  previewCol.classList.toggle("hidden", !visible);
+  grid.classList.toggle("lg:grid-cols-2", visible);
+  grid.classList.toggle("lg:grid-cols-1", !visible);
+}
+
+function toggleEditorPreview() {
+  const previewHidden = document.getElementById("preview-col").classList.contains("hidden");
+  setPreviewVisible(previewHidden);
 }
 
 function insertImageAtCursor(dataUrl, altText) {
