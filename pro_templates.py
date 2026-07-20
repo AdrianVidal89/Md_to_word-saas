@@ -31,7 +31,14 @@ from auth import (
 )
 from converter import build_docx, parse
 from database import get_supabase
-from models import AuthenticatedUser, StyleMapping, TemplateSummary, TemplateUploadResponse
+from models import (
+    AuthenticatedUser,
+    StyleMapping,
+    TemplateDetailResponse,
+    TemplateRenameRequest,
+    TemplateSummary,
+    TemplateUploadResponse,
+)
 from template_mapping import apply_style_mapping, detect_style_mapping, list_available_styles
 
 router = APIRouter(prefix="/api/pro", tags=["pro-templates"])
@@ -128,6 +135,38 @@ async def list_my_templates(user: AuthenticatedUser = Depends(require_user)):
     supabase = get_supabase()
     resp = supabase.table("templates").select("*").eq("user_id", user.id).execute()
     return [_to_summary(row) for row in (resp.data or [])]
+
+
+@router.get("/templates/{template_id}", response_model=TemplateDetailResponse)
+async def get_template_detail(template_id: str, user: AuthenticatedUser = Depends(require_user)):
+    """Detalle de una plantilla ya subida, incluyendo los estilos disponibles
+    en el .docx guardado — permite reabrir el paso 2 (mapeo) para editarla
+    sin tener que volver a subir el fichero."""
+    supabase = get_supabase()
+    row = _get_owned_template(supabase, template_id, user.id)
+    raw = supabase.storage.from_(BUCKET_NAME).download(row["storage_path"])
+    try:
+        available = list_available_styles(raw)
+    except Exception as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"No se pudo leer la plantilla: {exc}") from exc
+    return TemplateDetailResponse(**_to_summary(row).model_dump(), available_styles=available)
+
+
+@router.patch("/templates/{template_id}", response_model=TemplateSummary)
+async def rename_template(
+    template_id: str,
+    payload: TemplateRenameRequest,
+    user: AuthenticatedUser = Depends(require_user),
+):
+    supabase = get_supabase()
+    row = _get_owned_template(supabase, template_id, user.id)
+    updated = (
+        supabase.table("templates")
+        .update({"name": payload.name.strip()})
+        .eq("id", row["id"])
+        .execute()
+    )
+    return _to_summary(updated.data[0])
 
 
 # --------------------------------------------------------------------------

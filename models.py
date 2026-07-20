@@ -60,6 +60,18 @@ class TemplateSummary(BaseModel):
     created_at: str
 
 
+class TemplateDetailResponse(TemplateSummary):
+    """TemplateSummary + los estilos disponibles en el .docx/.dotx guardado,
+    para poder reabrir el paso 2 (mapeo) de una plantilla ya subida sin
+    obligar a resubir el fichero."""
+
+    available_styles: list[str]
+
+
+class TemplateRenameRequest(BaseModel):
+    name: str = Field(..., min_length=1)
+
+
 class ApiKeyCreated(BaseModel):
     """Devuelto una única vez al crear una API key: la clave en claro no se
     persiste, solo su hash (ver supabase/migrations/001_initial_schema.sql)."""

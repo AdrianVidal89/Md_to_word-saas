@@ -33,6 +33,24 @@ async function fetchMyTemplates() {
   return resp.json();
 }
 
+// ---------------------------------------------------------------------
+// Editar una plantilla ya subida: reabre el paso 2 (nombre + mapeo de
+// estilos) sin tener que volver a subir el fichero (ver GET
+// /api/pro/templates/{id} en pro_templates.py).
+// ---------------------------------------------------------------------
+async function openTemplateEditor(templateId) {
+  const headers = await getAuthHeader();
+  const resp = await fetch(`${PRO_API}/${templateId}`, { headers });
+  if (!resp.ok) return;
+  const data = await resp.json();
+  wizard.currentId = data.id;
+  wizard.currentName = data.name;
+  wizard.availableStyles = data.available_styles;
+  wizard.mapping = { ...data.style_mapping };
+  wizard.view = "step2";
+  paintWizard();
+}
+
 window.renderWizard = async function renderWizard() {
   wizard.templates = await fetchMyTemplates();
   wizard.view = "list";
@@ -110,6 +128,36 @@ function isPaidTier() {
   return state.tier === "pro" || state.tier === "enterprise";
 }
 
+// ---------------------------------------------------------------------
+// Guía visual: los campos de Word (p.ej. un índice) de la plantilla del
+// usuario no se recalculan al generar el .docx — es una limitación de Word
+// en sí, no del conversor (build_docx no toca campos OOXML). Se avisa antes
+// de convertir, con una animación en bucle (clic derecho -> Actualizar
+// campos), en vez de dejar que el usuario lo descubra solo.
+// ---------------------------------------------------------------------
+function buildTocGuide() {
+  const wrap = el("div", "flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-xl p-4 mb-5");
+
+  const page = el("div", "ai2w-toc-page");
+  page.appendChild(el("div", "ai2w-toc-line ai2w-toc-line-title"));
+  const targetLine = el("div", "ai2w-toc-line ai2w-toc-line-target");
+  const menu = el("div", "ai2w-toc-menu", t("wizard.tocGuideMenuItem"));
+  targetLine.appendChild(menu);
+  page.appendChild(targetLine);
+  page.appendChild(el("div", "ai2w-toc-line", ""));
+  const cursor = document.createElement("div");
+  cursor.className = "ai2w-toc-cursor";
+  cursor.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 2l14 7-6 1.5L10 17z"/></svg>';
+  page.appendChild(cursor);
+
+  const textWrap = el("div");
+  textWrap.appendChild(el("p", "text-sm font-semibold text-slate-800 mb-1", t("wizard.tocGuideTitle")));
+  textWrap.appendChild(el("p", "text-xs text-slate-500", t("wizard.tocGuideDesc")));
+
+  wrap.append(page, textWrap);
+  return wrap;
+}
+
 function paintList(root) {
   root.appendChild(el("h2", "font-semibold text-slate-900 mb-4", t("wizard.myTemplatesTitle")));
 
@@ -133,6 +181,9 @@ function paintList(root) {
         paintWizard();
       });
 
+      const editBtn = el("button", "text-xs border border-slate-300 rounded-lg px-3 py-1.5 text-slate-600 hover:border-slate-400", t("wizard.editBtn"));
+      editBtn.addEventListener("click", () => openTemplateEditor(tpl.id));
+
       const delBtn = el("button", "text-xs border border-slate-300 rounded-lg px-3 py-1.5 text-slate-500 hover:text-red-600 hover:border-red-300", t("wizard.deleteBtn"));
       delBtn.addEventListener("click", async () => {
         const headers = await getAuthHeader();
@@ -140,7 +191,7 @@ function paintList(root) {
         renderWizard();
       });
 
-      actions.append(useBtn, delBtn);
+      actions.append(useBtn, editBtn, delBtn);
       card.append(head, actions);
       grid.appendChild(card);
     });
@@ -198,6 +249,14 @@ function paintStep2(root) {
   root.appendChild(el("h2", "font-semibold text-slate-900 mb-1", t("wizard.step2Title")));
   root.appendChild(el("p", "text-sm text-slate-500 mb-4", t("wizard.step2Desc")));
 
+  const nameWrap = el("div", "mb-4");
+  nameWrap.appendChild(el("label", "text-xs text-slate-500 block mb-1", t("wizard.nameLabel")));
+  const nameInput = el("input", "w-full border border-slate-300 rounded-lg px-3 py-2 text-sm");
+  nameInput.type = "text";
+  nameInput.value = wizard.currentName || "";
+  nameWrap.appendChild(nameInput);
+  root.appendChild(nameWrap);
+
   const labels = {
     heading_1: t("wizard.mappingHeading1"),
     heading_2: t("wizard.mappingHeading2"),
@@ -237,8 +296,24 @@ function paintStep2(root) {
     errorEl.textContent = "";
     const mapping = {};
     MAPPING_SLOTS.forEach((slot) => { mapping[slot] = selects[slot].value || null; });
+    const newName = nameInput.value.trim();
 
     const headers = await getAuthHeader();
+
+    if (newName && newName !== wizard.currentName) {
+      const renameResp = await fetch(`${PRO_API}/${wizard.currentId}`, {
+        method: "PATCH",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName }),
+      });
+      if (!renameResp.ok) {
+        const payload = await renameResp.json().catch(() => ({}));
+        errorEl.textContent = payload.detail || `Error ${renameResp.status}`;
+        return;
+      }
+      wizard.currentName = newName;
+    }
+
     const resp = await fetch(`${PRO_API}/${wizard.currentId}/mapping`, {
       method: "PUT",
       headers: { ...headers, "Content-Type": "application/json" },
@@ -265,6 +340,8 @@ function paintStep3(root) {
   } else {
     root.appendChild(el("div", "mb-4"));
   }
+
+  root.appendChild(buildTocGuide());
 
   const textarea = document.createElement("textarea");
   textarea.className = "w-full border border-slate-300 rounded-lg p-3 font-mono text-sm mb-4";
