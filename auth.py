@@ -47,6 +47,22 @@ PRO_MAX_IPS_24H = int(os.environ.get("PRO_MAX_IPS_24H", "2"))
 # manual en el HTML, no hay flag espejo en shared.js — ver CLAUDE.md §5).
 FREE_PRICING_MODE = os.environ.get("FREE_PRICING_MODE", "true").lower() in ("1", "true", "yes", "on")
 
+
+def effective_tier(raw_tier: Optional[str]) -> str:
+    """Tier "efectivo" que ve el resto de la app. Mientras FREE_PRICING_MODE
+    esté activo, todo usuario registrado disfruta la experiencia Pro sin
+    pagar: un tier 'free' se reporta como 'pro'. NO se persiste en la BD —
+    la fila sigue siendo 'free', así que:
+      - el anti-abuso de cuentas Pro por IP (§5.4, _check_ip_abuse) NO se
+        aplica (mira el tier crudo del perfil, sigue 'free') y no bloquea a
+        usuarios legítimos con IP cambiante (móvil/5G);
+      - al apagar FREE_PRICING_MODE, todos vuelven a 'free' sin limpieza —
+        no quedan "pro que nunca pagaron" en la tabla.
+    'enterprise' y un 'pro' real (de pago) se respetan tal cual."""
+    if FREE_PRICING_MODE and (raw_tier or "free") == "free":
+        return "pro"
+    return raw_tier or "free"
+
 # Cliente JWKS para verificar los JWT ASIMÉTRICOS (ES256/RS256) que emite
 # Supabase con las "JWT signing keys" nuevas (hoy el default en proyectos
 # recientes). Se cachea: PyJWKClient guarda las claves públicas en memoria, así
@@ -221,7 +237,10 @@ async def get_current_user_optional(
     return AuthenticatedUser(
         id=profile["id"],
         email=profile.get("email"),
-        tier=profile.get("tier", "free"),
+        # Tier efectivo: en FREE_PRICING_MODE un 'free' se ve como 'pro' (ver
+        # effective_tier). El perfil crudo sigue 'free' en la BD, por eso el
+        # anti-abuso por IP de arriba (que mira profile["tier"]) no se aplica.
+        tier=effective_tier(profile.get("tier")),
         custom_template_trial_used=bool(profile.get("custom_template_trial_used_at")),
     )
 

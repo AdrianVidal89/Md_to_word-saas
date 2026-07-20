@@ -153,10 +153,24 @@ Supabase (PostgreSQL managed + Auth + JWT)
 > tachado, €0 al lado, "Free for a limited time" debajo) más el texto del
 > wizard corregido para no prometer/amenazar con un upgrade que no existe
 > (`wizard.trialNote` en `shared.js`). Para volver a cobrar:
-> `FREE_PRICING_MODE=false` (env var) en el backend, y revertir a mano en
+ `FREE_PRICING_MODE=false` (env var) en el backend, y revertir a mano en
 > `pricing.html` el precio de Pro a su vista original (`€3.99 / month`, sin
 > tachar) — nada más cambia, el resto de la página (planes, FAQ) nunca se
 > tocó.
+>
+> **Tier efectivo Pro (mismo flag):** mientras `FREE_PRICING_MODE` esté
+> activo, todo usuario registrado disfruta la experiencia Pro (barra de
+> formato, imágenes, "Tu espacio Pro", glow) sin pagar. Se resuelve en
+> `auth.effective_tier()`: un tier `free` se **reporta** como `pro` a la app
+> (en `get_current_user_optional`), pero **no** se persiste — la fila en
+> `public.users` sigue `free`. Es deliberado: (a) el anti-abuso de cuentas
+> Pro por IP (§5.4) mira el tier CRUDO del perfil, sigue `free`, así que no
+> bloquea a usuarios legítimos con IP cambiante (móvil/5G); (b) al apagar el
+> flag todos vuelven a `free` sin limpieza — no quedan "pro que nunca
+> pagaron" en la tabla. No cambiar esto a un tier `pro` real en la BD (ni en
+> el trigger `handle_new_auth_user`) sin coordinarlo: reintroduciría ambos
+> problemas. El path B2B por API key (`require_api_key`) NO pasa por
+> `effective_tier` — su tier es independiente.
 >
 > **El API sí seguirá siendo de pago** cuando se lance — no forma parte de
 > esta rebaja temporal. De momento está oculta de toda navegación pública
