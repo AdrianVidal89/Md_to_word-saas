@@ -36,14 +36,16 @@ SUPABASE_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET", "")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 PRO_MAX_IPS_24H = int(os.environ.get("PRO_MAX_IPS_24H", "2"))
 
-# Beta gratuita (validación técnica antes de facturar): mientras esté activo,
-# TODO es gratis — no se aplica el muro de pago Pro (la 2ª+ descarga con
-# plantilla propia de un 'free' NO devuelve 402). Sirve para lanzar la web,
-# dejar registrarse y medir tracción sin mover dinero. Para empezar a cobrar,
-# basta poner BETA_FREE_MODE=false (o quitar la env var y dejar default false)
-# — la política de precios/paywall vuelve intacta, no se ha borrado nada.
-# Debe ir en paralelo con el flag de frontend (BETA_FREE_MODE en shared.js).
-BETA_FREE_MODE = os.environ.get("BETA_FREE_MODE", "true").lower() in ("1", "true", "yes", "on")
+# Precio temporalmente en 0€ (validación técnica antes de facturar):
+# mientras esté activo, el muro de pago Pro no se aplica (la 2ª+ descarga
+# con plantilla propia de un 'free' NO devuelve 402). Sirve para lanzar la
+# web, dejar registrarse y medir tracción antes de mover dinero. Para
+# empezar a cobrar: FREE_PRICING_MODE=false (o quitar la env var y dejar
+# default false) — la política de precios/paywall vuelve intacta, no se ha
+# borrado nada. En el frontend, `pricing.html` muestra el precio real
+# tachado con "Free for a limited time" mientras esto esté activo (cambio
+# manual en el HTML, no hay flag espejo en shared.js — ver CLAUDE.md §5).
+FREE_PRICING_MODE = os.environ.get("FREE_PRICING_MODE", "true").lower() in ("1", "true", "yes", "on")
 
 # Cliente JWKS para verificar los JWT ASIMÉTRICOS (ES256/RS256) que emite
 # Supabase con las "JWT signing keys" nuevas (hoy el default en proyectos
@@ -280,8 +282,8 @@ def check_custom_template_quota(user: AuthenticatedUser) -> None:
     1 descarga real con plantilla propia y bloquea las siguientes con 402
     hasta que el usuario se haga Pro. No hay ofuscación aquí — la primera
     descarga es el fichero real completo, no una preview difuminada."""
-    if BETA_FREE_MODE:
-        return  # Beta gratuita: sin muro de pago, todo ilimitado (ver flag arriba).
+    if FREE_PRICING_MODE:
+        return  # Precio temporalmente en 0€: sin muro de pago, todo ilimitado (ver flag arriba).
     if user.tier != "free":
         return
     if not user.custom_template_trial_used:

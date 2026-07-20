@@ -335,12 +335,7 @@ function paintStep2(root) {
 function paintStep3(root) {
   root.appendChild(el("h2", "font-semibold text-slate-900 mb-1", `${t("wizard.step3Title")} — ${wizard.currentName}`));
   root.appendChild(el("p", "text-sm text-slate-500 mb-1", t("wizard.step3Desc")));
-  if (BETA_FREE_MODE) {
-    // En beta el backend no aplica el muro de pago (ver auth.py
-    // BETA_FREE_MODE): mostrar el texto de "1 prueba gratis, luego Pro"
-    // sería falso, porque de verdad son descargas ilimitadas para todos.
-    root.appendChild(el("p", "text-xs text-emerald-600 font-semibold mb-4", t("beta.wizardNote")));
-  } else if (!isPaidTier()) {
+  if (!isPaidTier()) {
     root.appendChild(el("p", "text-xs text-slate-400 mb-4", t("wizard.trialNote")));
   } else {
     root.appendChild(el("div", "mb-4"));

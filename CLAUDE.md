@@ -137,26 +137,35 @@ Supabase (PostgreSQL managed + Auth + JWT)
 > docs que hablen de un límite de 3/semana o de un flujo de "upsell/caramelo"
 > con `HTTP 402` + blur, es rastro del modelo anterior — no lo reintroduzcas.
 
-> **Beta gratuita (julio 2026, temporal): el muro de pago Pro está
-> desactivado.** Es validación técnica antes de facturar (lanzar, dejar que
-> la gente se registre, medir tracción, sin abrir el melón de la
-> Administración hasta ver si hay demanda real). Se controla con el flag
-> `BETA_FREE_MODE` (default `true`) presente **en paralelo en dos sitios que
-> deben moverse juntos**:
-> - Backend: `auth.py` — `check_custom_template_quota()` devuelve
->   inmediatamente sin comprobar cuota si `BETA_FREE_MODE` es true, así que
->   el 402 de la 2ª+ descarga con plantilla propia nunca se dispara.
-> - Frontend: `web/assets/shared.js` — `BETA_FREE_MODE` controla el banner
->   "gratis en beta" sitewide, el texto del wizard, y qué bloque se ve en
->   `pricing.html`/`api-access.html` (los bloques `[data-beta-show]`).
-> La política de precios real (planes, precio de la API) **no se ha
-> borrado**: sigue en `pricing.html`/`api-access.html`, comentada dentro de
-> bloques `<!-- BETA: ... -->` explícitos. Para volver a cobrar: 1)
-> `BETA_FREE_MODE=false` (env var) en el backend, 2) `BETA_FREE_MODE = false`
-> en `shared.js`, 3) descomentar esos bloques y quitar/ocultar los
-> `[data-beta-show]` que los sustituyen. No relances el paywall a medias
-> (solo backend o solo frontend) — quedaría un muro de pago invisible o un
-> precio visible que nadie cobra.
+> **Precio temporalmente en 0€ (julio 2026, temporal): el muro de pago Pro
+> está desactivado.** Es validación técnica antes de facturar (lanzar,
+> dejar que la gente se registre, medir tracción, sin abrir el melón de la
+> Administración hasta ver si hay demanda real). Deliberadamente **no** se
+> comunica como "beta" en ningún sitio visible para el usuario — suena a
+> "puede fallar", y no es eso: es una decisión de precio, el producto
+> funciona igual que siempre. Se controla con el flag de backend
+> `FREE_PRICING_MODE` (`auth.py`, default `true`):
+> `check_custom_template_quota()` devuelve inmediatamente sin comprobar
+> cuota si está activo, así que el 402 de la 2ª+ descarga con plantilla
+> propia nunca se dispara — cualquiera que se registre disfruta la
+> experiencia Pro completa gratis. No hay flag espejo en el frontend: la
+> única señal visible es el precio de Pro tachado en `pricing.html` (€3.99
+> tachado, €0 al lado, "Free for a limited time" debajo) más el texto del
+> wizard corregido para no prometer/amenazar con un upgrade que no existe
+> (`wizard.trialNote` en `shared.js`). Para volver a cobrar:
+> `FREE_PRICING_MODE=false` (env var) en el backend, y revertir a mano en
+> `pricing.html` el precio de Pro a su vista original (`€3.99 / month`, sin
+> tachar) — nada más cambia, el resto de la página (planes, FAQ) nunca se
+> tocó.
+>
+> **El API sí seguirá siendo de pago** cuando se lance — no forma parte de
+> esta rebaja temporal. De momento está oculta de toda navegación pública
+> (sin enlace "API" en el header/footer de `index.html`/`pricing.html`, ni
+> en "Tu espacio Pro", ni el `devLink` de precios) para no anunciar un
+> producto que aún no está listo para vender. La página `/api-access` y el
+> endpoint `/api/v1/b2b/convert` siguen funcionando sin cambios — solo no
+> hay ruta de descubrimiento pública. Para sacarla: restaurar esos enlaces
+> de navegación (no hace falta tocar el contenido de la página).
 
 ### 5.1 Free (anzuelo): conversión genérica ilimitada, sin registro
 
