@@ -344,31 +344,40 @@ wireAuthUI(CONFIG);
 if (new URLSearchParams(location.search).has("debug")) {
   (async () => {
     const box = document.createElement("pre");
-    box.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99999;margin:0;background:#0b1020;color:#7CFC7C;font:12px/1.5 monospace;padding:10px;max-height:55vh;overflow:auto;white-space:pre-wrap;border-top:2px solid #7CFC7C";
+    box.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99999;margin:0;background:#0b1020;color:#7CFC7C;font:12px/1.5 monospace;padding:10px;max-height:60vh;overflow:auto;white-space:pre-wrap;border-top:2px solid #7CFC7C";
     document.body.appendChild(box);
     const log = (s) => { box.textContent += s + "\n"; };
     log("=== AI to Word · diagnóstico /api/me ===");
     log("API_BASE_URL = " + JSON.stringify(CONFIG.API_BASE_URL));
     log("SUPABASE_URL = " + JSON.stringify(CONFIG.SUPABASE_URL));
+    log("supabaseClient cargado: " + Boolean(supabaseClient));
+    // Esperar a que Supabase restaure/entregue la sesión (hasta ~9s): el
+    // diagnóstico anterior corría antes de tenerla y llamaba sin token.
+    let session = null;
+    for (let i = 0; i < 15 && !session; i++) {
+      session = supabaseClient ? (await supabaseClient.auth.getSession()).data.session : null;
+      if (!session) await new Promise((r) => setTimeout(r, 600));
+    }
+    log("sesión activa: " + Boolean(session));
+    if (!session) {
+      log("→ No hay sesión de Supabase en esta pestaña. Inicia sesión aquí y recarga /?debug=1");
+      return;
+    }
+    log("email: " + (session.user && session.user.email));
     try {
-      const s = supabaseClient ? (await supabaseClient.auth.getSession()).data.session : null;
-      log("sesión activa: " + Boolean(s));
-      if (s) {
-        log("email: " + (s.user && s.user.email));
-        // Cabecera del JWT (alg) sin exponer el token entero:
-        try {
-          const h = JSON.parse(atob(s.access_token.split(".")[0]));
-          const p = JSON.parse(atob(s.access_token.split(".")[1]));
-          log("JWT alg=" + h.alg + "  aud=" + JSON.stringify(p.aud) + "  role=" + p.role);
-        } catch (e) { log("no pude leer el JWT: " + e.message); }
-      }
+      const h = JSON.parse(atob(session.access_token.split(".")[0]));
+      const p = JSON.parse(atob(session.access_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+      log("JWT alg=" + h.alg + "  aud=" + JSON.stringify(p.aud) + "  role=" + p.role);
+      log("JWT exp=" + new Date(p.exp * 1000).toISOString() + "  (ahora=" + new Date().toISOString() + ")");
+    } catch (e) { log("no pude leer el JWT: " + e.message); }
+    try {
       const headers = await getAuthHeader();
       log("Authorization presente: " + Boolean(headers.Authorization));
       const resp = await fetch(`${CONFIG.API_BASE_URL}/api/me`, { headers });
-      log("/api/me → HTTP " + resp.status);
-      log("/api/me body: " + (await resp.text()).slice(0, 600));
+      log(">>> /api/me → HTTP " + resp.status);
+      log(">>> /api/me body: " + (await resp.text()).slice(0, 600));
     } catch (e) {
-      log("ERROR de red/fetch: " + e.message);
+      log("ERROR de red/fetch a /api/me: " + e.message);
     }
     log("state.tier = " + JSON.stringify(state.tier));
   })();
