@@ -109,9 +109,18 @@
             <!--TEMPLATE_OPTIONS-->
           </select>
         </label>
+        <input type="text" id="title-input"
+               data-i18n-placeholder="hero.titlePlaceholder"
+               class="border border-slate-300 rounded-lg px-2 py-1.5 text-sm w-48 text-slate-800" />
         <input type="text" id="filename-input" value="documento"
                data-i18n-placeholder="hero.filenamePlaceholder"
                class="border border-slate-300 rounded-lg px-2 py-1.5 text-sm w-32 text-slate-800" />
+        <input type="file" id="open-file-input" accept=".md,.markdown,text/markdown,text/plain" class="hidden" />
+        <button id="open-file-btn" type="button"
+          class="border border-slate-300 hover:border-slate-400 bg-white text-slate-700 font-semibold rounded-lg px-3 py-2 text-sm flex items-center gap-1.5">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>
+          <span data-i18n="hero.openFileBtn">Open .md</span>
+        </button>
         <button id="convert-btn"
           class="ml-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg px-5 py-2 text-sm shadow-sm"
           data-i18n="hero.downloadBtn">
@@ -119,15 +128,27 @@
         </button>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
+      <div id="pro-editor-bar" class="hidden flex-wrap items-center gap-1 px-3 py-2 border-b border-slate-200 bg-white"></div>
+
+      <div id="editor-grid" class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
         <div class="flex flex-col">
-          <div class="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-100" data-i18n="hero.editorTab">Markdown</div>
+          <div class="px-4 py-2 flex items-center justify-between gap-3 text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-100">
+            <span data-i18n="hero.editorTab">Markdown</span>
+            <span class="flex items-center gap-2 normal-case font-normal text-slate-400">
+              <span data-i18n="hero.editorHint">write, paste or drop a .md here</span>
+              <a href="https://www.markdownguide.org/basic-syntax/" target="_blank" rel="noopener noreferrer"
+                 class="text-emerald-600 hover:underline shrink-0" data-i18n="hero.markdownGuideLink">Markdown guide ↗</a>
+            </span>
+          </div>
           <textarea id="editor" rows="10"
             data-i18n-placeholder="hero.editorPlaceholder"
             class="flex-1 w-full p-4 font-mono text-sm text-slate-800 resize-none focus:outline-none h-64 md:h-[420px] lg:h-[480px]"></textarea>
         </div>
-        <div class="flex flex-col">
-          <div class="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-100" data-i18n="hero.previewTab">Preview</div>
+        <div id="preview-col" class="flex flex-col">
+          <div class="px-4 py-2 flex items-center justify-between gap-3 text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-100">
+            <span data-i18n="hero.previewTab">Preview</span>
+            <span class="normal-case font-normal text-slate-400" data-i18n="hero.previewHint">approximate to the result</span>
+          </div>
           <div id="preview-wrap" class="flex-1 overflow-auto h-64 md:h-[420px] lg:h-[480px] p-4">
             <div id="preview" class="prose prose-slate prose-sm max-w-none"></div>
           </div>
@@ -469,6 +490,7 @@ document.addEventListener("ai2w:auth", (e) => {
   document.getElementById("upgrade-hook-section").classList.toggle("hidden", isPaid);
   document.getElementById("usecases-section").classList.toggle("hidden", isPaid);
   document.getElementById("pro-toolbox").classList.toggle("hidden", !isPaid);
+  setProEditorBarVisible(isPaid);
   if (isPaid) {
     loadProRecentTemplates();
     // Un usuario Pro entra DIRECTO a su studio limpio, no a la landing de
@@ -538,11 +560,193 @@ editor.addEventListener("drop", (e) => {
   e.preventDefault();
   const f = e.dataTransfer.files[0];
   if (!f) return;
-  const reader = new FileReader();
-  reader.onload = () => { editor.value = reader.result; renderPreview(); };
-  reader.readAsText(f);
+  loadMarkdownFile(f);
 });
 renderPreview();
+
+// ---------------------------------------------------------------------
+// Abrir .md: sube un fichero y lo carga en el editor para previsualizar,
+// igual que el drag & drop de arriba.
+// ---------------------------------------------------------------------
+function loadMarkdownFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => { editor.value = reader.result; renderPreview(); };
+  reader.readAsText(file);
+}
+
+const openFileInput = document.getElementById("open-file-input");
+document.getElementById("open-file-btn").addEventListener("click", () => openFileInput.click());
+openFileInput.addEventListener("change", () => {
+  const f = openFileInput.files[0];
+  if (f) loadMarkdownFile(f);
+  openFileInput.value = "";
+});
+
+// ---------------------------------------------------------------------
+// Barra de formato Pro: solo se pinta y se muestra para tier pro/enterprise
+// (ver setProEditorBarVisible, llamada desde el listener ai2w:auth). Inserta
+// sintaxis Markdown en #editor; el botón de imagen es la feature Pro
+// (adjuntar imágenes — se embeben de verdad en el .docx, ver builder.py).
+// ---------------------------------------------------------------------
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/gif", "image/bmp", "image/tiff"];
+let proEditorBarBuilt = false;
+
+function setProEditorBarVisible(visible) {
+  const bar = document.getElementById("pro-editor-bar");
+  if (visible && !proEditorBarBuilt) {
+    buildProEditorBar(bar);
+    proEditorBarBuilt = true;
+  }
+  bar.classList.toggle("hidden", !visible);
+  bar.classList.toggle("flex", visible);
+}
+
+function proToolIcon(inner) {
+  return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+}
+
+const PRO_TOOL_ICONS = {
+  bold: `<span class="font-bold">B</span>`,
+  italic: `<span class="italic font-serif">I</span>`,
+  heading: `<span class="font-bold">H</span>`,
+  bulletList: proToolIcon('<circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/><path d="M9 6h11M9 12h11M9 18h11"/>'),
+  numberedList: proToolIcon('<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h1M3.5 4.5 4 4v2M3 18h2l-2 2.5h2"/>'),
+  link: proToolIcon('<path d="M9 15 15 9"/><path d="M11 6l1-1a3.5 3.5 0 0 1 5 5l-1 1"/><path d="M13 18l-1 1a3.5 3.5 0 0 1-5-5l1-1"/>'),
+  image: proToolIcon('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 15-5-5L5 20"/>'),
+  code: proToolIcon('<path d="m9 6-6 6 6 6M15 6l6 6-6 6"/>'),
+  table: proToolIcon('<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18M3 15h18M9 4v16"/>'),
+  togglePreview: proToolIcon('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>'),
+  help: proToolIcon('<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.7 2.2c-.9.5-1.2 1-1.2 1.8"/><path d="M12 17h.01"/>'),
+};
+
+function proBarDivider() {
+  const span = document.createElement("span");
+  span.className = "w-px h-5 bg-slate-200 mx-1";
+  return span;
+}
+
+function proToolButton(key, onClick) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.title = t(`proBar.${key}`);
+  btn.setAttribute("aria-label", t(`proBar.${key}`));
+  btn.className = "w-8 h-8 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900";
+  btn.innerHTML = PRO_TOOL_ICONS[key];
+  btn.addEventListener("click", onClick);
+  return btn;
+}
+
+function wrapSelection(before, after, placeholder) {
+  const start = editor.selectionStart;
+  const end = editor.selectionEnd;
+  const value = editor.value;
+  const selected = value.slice(start, end) || placeholder;
+  editor.value = value.slice(0, start) + before + selected + after + value.slice(end);
+  editor.focus();
+  editor.setSelectionRange(start + before.length, start + before.length + selected.length);
+  renderPreview();
+}
+
+function insertAtCursor(text) {
+  const start = editor.selectionStart;
+  const end = editor.selectionEnd;
+  editor.value = editor.value.slice(0, start) + text + editor.value.slice(end);
+  const pos = start + text.length;
+  editor.focus();
+  editor.setSelectionRange(pos, pos);
+  renderPreview();
+}
+
+function prefixSelectedLines(makeLine) {
+  const start = editor.selectionStart;
+  const end = editor.selectionEnd;
+  const value = editor.value;
+  const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+  let lineEnd = value.indexOf("\n", end);
+  if (lineEnd === -1) lineEnd = value.length;
+  const lines = value.slice(lineStart, lineEnd).split("\n");
+  const newBlock = lines.map((line, i) => makeLine(line, i)).join("\n");
+  editor.value = value.slice(0, lineStart) + newBlock + value.slice(lineEnd);
+  editor.focus();
+  editor.setSelectionRange(lineStart, lineStart + newBlock.length);
+  renderPreview();
+}
+
+function toggleEditorPreview() {
+  const previewCol = document.getElementById("preview-col");
+  const grid = document.getElementById("editor-grid");
+  const nowHidden = previewCol.classList.toggle("hidden");
+  grid.classList.toggle("lg:grid-cols-2", !nowHidden);
+  grid.classList.toggle("lg:grid-cols-1", nowHidden);
+}
+
+function insertImageAtCursor(dataUrl, altText) {
+  insertAtCursor(`![${altText}](${dataUrl})`);
+}
+
+function handleProImageUpload(file, errorEl) {
+  errorEl.textContent = "";
+  if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+    errorEl.textContent = t("proBar.imageBadType");
+    return;
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    errorEl.textContent = t("proBar.imageTooLarge");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    const altText = file.name.replace(/\.[^/.]+$/, "");
+    insertImageAtCursor(reader.result, altText);
+  };
+  reader.readAsDataURL(file);
+}
+
+function buildProEditorBar(bar) {
+  bar.appendChild(proToolButton("bold", () => wrapSelection("**", "**", "bold text")));
+  bar.appendChild(proToolButton("italic", () => wrapSelection("*", "*", "italic text")));
+  bar.appendChild(proToolButton("heading", () => prefixSelectedLines((line) => (line.startsWith("## ") ? line : `## ${line}`))));
+
+  bar.appendChild(proBarDivider());
+
+  bar.appendChild(proToolButton("bulletList", () => prefixSelectedLines((line) => (line.trim() ? `- ${line}` : line))));
+  bar.appendChild(proToolButton("numberedList", () => prefixSelectedLines((line, i) => (line.trim() ? `${i + 1}. ${line}` : line))));
+
+  bar.appendChild(proBarDivider());
+
+  bar.appendChild(proToolButton("link", () => {
+    const url = window.prompt(t("proBar.linkPrompt"), "https://");
+    if (url) wrapSelection("[", `](${url})`, "link text");
+  }));
+
+  const imageErrorEl = document.createElement("span");
+  imageErrorEl.className = "text-red-600 text-[11px] ml-1";
+  const imageInput = document.createElement("input");
+  imageInput.type = "file";
+  imageInput.accept = ACCEPTED_IMAGE_TYPES.join(",");
+  imageInput.className = "hidden";
+  imageInput.addEventListener("change", () => {
+    const f = imageInput.files[0];
+    if (f) handleProImageUpload(f, imageErrorEl);
+    imageInput.value = "";
+  });
+  bar.appendChild(imageInput);
+  bar.appendChild(proToolButton("image", () => imageInput.click()));
+
+  bar.appendChild(proToolButton("code", () => {
+    const selected = editor.value.slice(editor.selectionStart, editor.selectionEnd);
+    if (selected.includes("\n")) wrapSelection("```\n", "\n```", "code");
+    else wrapSelection("`", "`", "code");
+  }));
+  bar.appendChild(proToolButton("table", () => insertAtCursor("\n| Column 1 | Column 2 |\n|---|---|\n| A | B |\n")));
+
+  bar.appendChild(proBarDivider());
+
+  bar.appendChild(proToolButton("togglePreview", toggleEditorPreview));
+  bar.appendChild(proToolButton("help", () => window.open("https://www.markdownguide.org/basic-syntax/", "_blank", "noopener,noreferrer")));
+  bar.appendChild(imageErrorEl);
+}
 
 document.getElementById("compare-cta").addEventListener("click", () => {
   if (state.session) { showApp(); } else { openModal("signup-overlay"); }
@@ -583,6 +787,8 @@ async function runConversion() {
   const formData = new FormData();
   formData.append("markdown", editor.value || "");
   formData.append("template", document.getElementById("template-select").value);
+  const titleValue = document.getElementById("title-input").value.trim();
+  if (titleValue) formData.append("title", titleValue);
   formData.append("filename", document.getElementById("filename-input").value || "documento");
 
   try {

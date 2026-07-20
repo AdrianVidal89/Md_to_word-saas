@@ -11,16 +11,27 @@ central de este dominio (documentos de testing/QA) y se aplica en ambos
 modos. No modificar sin acuerdo explícito — ver CLAUDE.md.
 """
 
+import base64
+import binascii
+import re
 from io import BytesIO
 
 from docx import Document
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Pt, RGBColor
+from docx.shared import Emu, Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 from . import styles
 from .template import prepare_from_template
+
+# Imágenes embebidas: solo se aceptan como data URI (nunca se descarga una
+# URL http(s) externa server-side — /api/convert es público y sin cuota,
+# eso sería una superficie SSRF). MAX_IMAGE_BYTES acota el payload por la
+# misma razón de abuso anti-DoS que el rate-limit por IP (ver CLAUDE.md §5.1).
+_DATA_URI_IMAGE_RE = re.compile(r"^data:image/[a-zA-Z0-9.+-]+;base64,(?P<data>.+)$", re.DOTALL)
+MAX_IMAGE_BYTES = 8 * 1024 * 1024
+MAX_IMAGE_WIDTH_INCHES = 6.0
 
 
 def build_docx(blocks: list, metadata: dict | None = None, template_path=None) -> bytes:
@@ -107,6 +118,9 @@ def _add_paragraph(doc, block: dict) -> None:
 
 def _render_runs(paragraph, runs: list) -> None:
     for r in runs:
+        if r.get("image"):
+            _add_image(paragraph, r["image"])
+            continue
         run = paragraph.add_run(r.get("text", ""))
         run.bold = r.get("bold", False)
         run.italic = r.get("italic", False)
@@ -117,6 +131,35 @@ def _render_runs(paragraph, runs: list) -> None:
             # w:hyperlink/r:id, no es un hyperlink real navegable.
             run.font.underline = True
             run.font.color.rgb = RGBColor.from_string(styles.COLOR_ACCENT)
+
+
+def _add_image(paragraph, url: str) -> None:
+    image_bytes = _decode_data_uri_image(url)
+    if image_bytes is None:
+        return  # URL externa o payload inválido/demasiado grande: se ignora
+    run = paragraph.add_run()
+    try:
+        picture = run.add_picture(BytesIO(image_bytes))
+    except Exception:
+        return  # bytes corruptos o formato que python-docx no reconoce
+    max_width = Emu(Inches(MAX_IMAGE_WIDTH_INCHES))
+    if picture.width > max_width:
+        ratio = max_width / picture.width
+        picture.width = max_width
+        picture.height = int(picture.height * ratio)
+
+
+def _decode_data_uri_image(url: str):
+    match = _DATA_URI_IMAGE_RE.match((url or "").strip())
+    if not match:
+        return None
+    try:
+        raw = base64.b64decode(match.group("data"), validate=True)
+    except (ValueError, binascii.Error):
+        return None
+    if len(raw) > MAX_IMAGE_BYTES:
+        return None
+    return raw
 
 
 def _add_list(doc, block: dict) -> None:

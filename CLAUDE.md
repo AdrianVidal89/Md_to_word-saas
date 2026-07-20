@@ -46,6 +46,15 @@ arregles a menos que el usuario lo pida explícitamente**:
   borde en el Word (sí lo hay en el preview HTML del cliente; es una
   divergencia conocida).
 - Las celdas de tabla solo admiten texto plano (nunca bold/italic/code).
+- Las imágenes (`![alt](url)`) **sí se embeben de verdad** en el `.docx`
+  (feature Pro, julio 2026) — pero *solo* cuando `url` es una data URI
+  (`data:image/...;base64,...`); una URL http(s) normal se ignora en
+  silencio y nunca se descarga server-side. No relajes esto para hacer
+  `fetch`/`requests.get` de la URL sin coordinarlo explícitamente — es
+  una superficie SSRF directa en `/api/convert`, que es público y sin
+  cuota. El payload decodificado también está acotado
+  (`MAX_IMAGE_BYTES` en `builder.py`) por la misma razón anti-abuso que
+  el rate-limit por IP de §5.1.
 - Los links (`[texto](url)`) se simulan visualmente (subrayado + azul) pero
   **no son hyperlinks OOXML reales**. Además, un link con bold anidado
   (`**[x](url)**`) pierde el bold.
