@@ -1,13 +1,16 @@
-# CLAUDE.md — AI to Word
+# CLAUDE.md — AI to Doc
 
 Instrucciones de sistema para cualquier agente (Claude Code u otro) que trabaje
 en este repositorio. Léelo antes de tocar código.
 
-> **Nombre del producto**: "AI to Word" de cara al usuario (julio 2026 —
-> nombre más simple para un público no técnico que no necesita saber qué es
-> "Markdown" o ".docx"). Antes se llamó "Formalize", y antes de eso
-> "MD2Docx" durante el desarrollo inicial — si ves cualquiera de esos
-> nombres en código viejo, identificadores internos (p. ej. el header
+> **Nombre del producto**: "AI to Doc" de cara al usuario (julio 2026 —
+> alineado con el dominio `ai-to-doc.com` y deja espacio para futuras
+> secciones más allá de Word; hoy sigue convirtiendo solo a `.docx`, así
+> que las descripciones funcionales pueden seguir hablando de "Word").
+> Antes se llamó "AI to Word" (mismo julio 2026, nombre puente), antes
+> "Formalize", y antes de eso "MD2Docx" durante el desarrollo inicial —
+> si ves cualquiera de esos nombres en código viejo, identificadores
+> internos (p. ej. el header
 > `X-Formalize-Trial-Used`, el prefijo de API keys `formalize_live_`, o el
 > título de la app FastAPI), capturas de pantalla o conversaciones
 > anteriores, es el mismo producto. No hace falta renombrar esos

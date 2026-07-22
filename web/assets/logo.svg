@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 32 32" role="img" aria-label="AI to Doc">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#10b981"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded app tile: full-bleed so the mark reads as a brand icon even at 16px (Google favicon). -->
+  <rect x="1" y="1" width="30" height="30" rx="7" fill="url(#tile)"/>
+  <!-- Folded document corner (light mint), matching the inline header glyph. -->
+  <path d="M21 4 h6 a1 1 0 0 1 1 1 v6 z" fill="#a7f3d0"/>
+  <!-- Text lines of the "document". -->
+  <rect x="8"  y="13"   width="16" height="3" rx="1.5" fill="#ffffff"/>
+  <rect x="8"  y="18.5" width="16" height="3" rx="1.5" fill="#ffffff"/>
+  <rect x="8"  y="24"   width="10" height="3" rx="1.5" fill="#ffffff"/>
+</svg>

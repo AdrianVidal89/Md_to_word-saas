@@ -1,4 +1,4 @@
-/* AI to Word — lógica compartida entre home/pricing/api-access:
+/* AI to Doc — lógica compartida entre home/pricing/api-access:
    i18n, sesión de Supabase (con guardas defensivas: un fallo de CDN nunca
    debe romper el resto de la página), y los modales de login/signup. */
 
@@ -86,7 +86,7 @@ const I18N = {
       desc: "A machine-to-machine endpoint authenticated with an API key. Drop it into CI/CD pipelines or your own SaaS.",
       cta: "See API docs",
     },
-    footer: { tagline: "AI to Word — paste your AI's answer, download Word. No tags, no JSON, no code." },
+    footer: { tagline: "AI to Doc — paste your AI's answer, download Word. No tags, no JSON, no code." },
     auth: {
       loginTitle: "Log in", signupTitle: "Create account",
       emailPlaceholder: "Email", passwordPlaceholder: "Password", passwordPlaceholderMin: "Password (min. 6 characters)",
@@ -267,7 +267,7 @@ const I18N = {
       desc: "Un endpoint máquina a máquina autenticado con una API key. Para pipelines de CI/CD o tu propio SaaS.",
       cta: "Ver documentación de la API",
     },
-    footer: { tagline: "AI to Word — pega la respuesta de tu IA, descarga Word. Sin tags, sin JSON, sin código." },
+    footer: { tagline: "AI to Doc — pega la respuesta de tu IA, descarga Word. Sin tags, sin JSON, sin código." },
     auth: {
       loginTitle: "Iniciar sesión", signupTitle: "Crear cuenta",
       emailPlaceholder: "Email", passwordPlaceholder: "Contraseña", passwordPlaceholderMin: "Contraseña (mín. 6 caracteres)",
@@ -448,7 +448,7 @@ const I18N = {
       desc: "Un endpoint machine à machine authentifié par une clé API. À intégrer dans vos pipelines CI/CD ou votre propre SaaS.",
       cta: "Voir la documentation de l'API",
     },
-    footer: { tagline: "AI to Word — collez la réponse de votre IA, téléchargez Word. Sans tags, sans JSON, sans code." },
+    footer: { tagline: "AI to Doc — collez la réponse de votre IA, téléchargez Word. Sans tags, sans JSON, sans code." },
     auth: {
       loginTitle: "Connexion", signupTitle: "Créer un compte",
       emailPlaceholder: "Email", passwordPlaceholder: "Mot de passe", passwordPlaceholderMin: "Mot de passe (min. 6 caractères)",
@@ -629,7 +629,7 @@ const I18N = {
       desc: "Um endpoint máquina a máquina autenticado com uma chave de API. Para pipelines de CI/CD ou o seu próprio SaaS.",
       cta: "Ver documentação da API",
     },
-    footer: { tagline: "AI to Word — cole a resposta da sua IA, descarregue Word. Sem tags, sem JSON, sem código." },
+    footer: { tagline: "AI to Doc — cole a resposta da sua IA, descarregue Word. Sem tags, sem JSON, sem código." },
     auth: {
       loginTitle: "Entrar", signupTitle: "Criar conta",
       emailPlaceholder: "Email", passwordPlaceholder: "Palavra-passe", passwordPlaceholderMin: "Palavra-passe (mín. 6 caracteres)",
@@ -810,7 +810,7 @@ const I18N = {
       desc: "Ein Machine-to-Machine-Endpunkt, authentifiziert mit einem API-Schlüssel. Für CI/CD-Pipelines oder Ihr eigenes SaaS.",
       cta: "API-Dokumentation ansehen",
     },
-    footer: { tagline: "AI to Word — fügen Sie die Antwort Ihrer KI ein, laden Sie Word herunter. Keine Tags, kein JSON, kein Code." },
+    footer: { tagline: "AI to Doc — fügen Sie die Antwort Ihrer KI ein, laden Sie Word herunter. Keine Tags, kein JSON, kein Code." },
     auth: {
       loginTitle: "Anmelden", signupTitle: "Konto erstellen",
       emailPlaceholder: "E-Mail", passwordPlaceholder: "Passwort", passwordPlaceholderMin: "Passwort (mind. 6 Zeichen)",
@@ -991,7 +991,7 @@ const I18N = {
       desc: "一个使用 API 密钥认证的机器对机器接口。可接入 CI/CD 流水线或你自己的 SaaS 产品。",
       cta: "查看 API 文档",
     },
-    footer: { tagline: "AI to Word——粘贴你的 AI 回答，下载 Word 文档。无标签，无 JSON，无代码。" },
+    footer: { tagline: "AI to Doc——粘贴你的 AI 回答，下载 Word 文档。无标签，无 JSON，无代码。" },
     auth: {
       loginTitle: "登录", signupTitle: "创建账号",
       emailPlaceholder: "邮箱", passwordPlaceholder: "密码", passwordPlaceholderMin: "密码（至少 6 个字符）",
