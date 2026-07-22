@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AI to Word — Paste your AI's answer, download Word</title>
+<title>AI to Doc — Paste your AI's answer, download Word</title>
 <meta name="description" content="Paste your AI's answer, download a clean Word document instantly. No tags, no JSON, no code — and bring your own corporate Word template." />
 <link rel="canonical" href="__SITE_URL__/" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="AI to Word — Paste your AI's answer, download Word" />
+<meta property="og:title" content="AI to Doc — Paste your AI's answer, download Word" />
 <meta property="og:description" content="Paste your AI's answer, download a clean Word document instantly. No tags, no JSON, no code." />
 <meta property="og:url" content="__SITE_URL__/" />
 <meta property="og:image" content="__SITE_URL__/assets/og-image.png" />
@@ -23,7 +23,7 @@
     {
       "@type": "Organization",
       "@id": "__SITE_URL__/#organization",
-      "name": "AI to Word",
+      "name": "AI to Doc",
       "url": "__SITE_URL__/",
       "logo": {
         "@type": "ImageObject",
@@ -36,14 +36,14 @@
       "@type": "WebSite",
       "@id": "__SITE_URL__/#website",
       "url": "__SITE_URL__/",
-      "name": "AI to Word",
+      "name": "AI to Doc",
       "description": "Paste your AI's answer, download a clean Word document instantly.",
       "publisher": { "@id": "__SITE_URL__/#organization" },
       "inLanguage": "en"
     },
     {
       "@type": "WebApplication",
-      "name": "AI to Word",
+      "name": "AI to Doc",
       "url": "__SITE_URL__/",
       "applicationCategory": "BusinessApplication",
       "operatingSystem": "Web",
@@ -149,7 +149,7 @@
         <rect x="7" y="17" width="12" height="2" rx="1" fill="white"/>
         <rect x="7" y="21" width="8" height="2" rx="1" fill="white"/>
       </svg>
-      AI to Word
+      AI to Doc
     </a>
     <nav class="hidden md:flex items-center gap-6 text-sm text-slate-600 font-medium">
       <a href="/" data-i18n="nav.home" class="text-slate-900">Home</a>
@@ -396,7 +396,7 @@
 
   <footer class="border-t border-slate-200">
     <div class="max-w-6xl mx-auto px-4 py-10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
-      <p data-i18n="footer.tagline">AI to Word — paste your AI's answer, download Word. No tags, no JSON, no code.</p>
+      <p data-i18n="footer.tagline">AI to Doc — paste your AI's answer, download Word. No tags, no JSON, no code.</p>
       <div class="flex items-center gap-5">
         <a href="/pricing" data-i18n="nav.pricing" class="hover:text-slate-900">Pricing</a>
       </div>
@@ -489,7 +489,7 @@ if (new URLSearchParams(location.search).has("debug")) {
     box.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:99999;margin:0;background:#0b1020;color:#7CFC7C;font:12px/1.5 monospace;padding:10px;max-height:60vh;overflow:auto;white-space:pre-wrap;border-top:2px solid #7CFC7C";
     document.body.appendChild(box);
     const log = (s) => { box.textContent += s + "\n"; };
-    log("=== AI to Word · diagnóstico /api/me ===");
+    log("=== AI to Doc · diagnóstico /api/me ===");
     log("API_BASE_URL = " + JSON.stringify(CONFIG.API_BASE_URL));
     log("SUPABASE_URL = " + JSON.stringify(CONFIG.SUPABASE_URL));
     log("supabaseClient cargado: " + Boolean(supabaseClient));

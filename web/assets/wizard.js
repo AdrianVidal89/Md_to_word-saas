@@ -1,4 +1,4 @@
-/* AI to Word — Pro wizard (subir -> mapear estilos -> conversión de prueba),
+/* AI to Doc — Pro wizard (subir -> mapear estilos -> conversión de prueba),
    contra los endpoints de pro_templates.py (ver CLAUDE.md §5.2). Un usuario
    'free' tiene derecho a 1 descarga real de prueba antes de que el backend
    empiece a devolver 402 — se refleja tal cual, sin difuminar ni fingir

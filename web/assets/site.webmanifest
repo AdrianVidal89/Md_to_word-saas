@@ -1,6 +1,6 @@
 {
-  "name": "AI to Word",
-  "short_name": "AI to Word",
+  "name": "AI to Doc",
+  "short_name": "AI to Doc",
   "description": "Paste your AI's answer, download a clean Word document instantly.",
   "start_url": "/",
   "display": "standalone",
