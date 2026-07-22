@@ -38,7 +38,7 @@ WEB_DIR = BASE_DIR / "web"
 
 MAX_MARKDOWN_BYTES = 2 * 1024 * 1024  # 2 MB: límite defensivo de payload
 
-app = FastAPI(title="Formalize API")
+app = FastAPI(title="AI to Doc API")
 
 _frontend_origins = [o.strip() for o in os.environ.get("FRONTEND_ORIGINS", "").split(",") if o.strip()]
 app.add_middleware(
@@ -47,7 +47,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-Formalize-Trial-Used"],
+    expose_headers=["X-AiToDoc-Trial-Used"],
 )
 
 if (WEB_DIR / "assets").exists():

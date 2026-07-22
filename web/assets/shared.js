@@ -1094,7 +1094,7 @@ const I18N = {
 const LANGS = ["en", "es", "fr", "pt", "de", "zh"];
 
 const state = {
-  lang: LANGS.includes(localStorage.getItem("formalize_lang")) ? localStorage.getItem("formalize_lang") : "en",
+  lang: LANGS.includes(localStorage.getItem("aitodoc_lang")) ? localStorage.getItem("aitodoc_lang") : "en",
   session: null,
   tier: null,
 };
@@ -1159,7 +1159,7 @@ function initLangToggle(onChange) {
   select.value = state.lang;
   select.addEventListener("change", () => {
     state.lang = select.value;
-    localStorage.setItem("formalize_lang", state.lang);
+    localStorage.setItem("aitodoc_lang", state.lang);
     applyI18n();
     if (onChange) onChange();
   });

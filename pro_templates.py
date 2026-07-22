@@ -246,7 +246,7 @@ async def convert_with_template(
             "Content-Disposition": f'attachment; filename="{safe_name}.docx"',
             # Le dice al wizard si esta descarga consumió la prueba gratuita,
             # para que el mensaje de éxito sea preciso (ver CLAUDE.md §5.2).
-            "X-Formalize-Trial-Used": "true" if is_trial else "false",
+            "X-AiToDoc-Trial-Used": "true" if is_trial else "false",
         },
     )
 

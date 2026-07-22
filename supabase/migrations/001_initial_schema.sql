@@ -1,5 +1,5 @@
 -- =============================================================================
--- Formalize — esquema inicial
+-- AI to Doc — esquema inicial
 -- Aplica con: supabase db push  (o pegando en el SQL editor del proyecto)
 -- =============================================================================
 

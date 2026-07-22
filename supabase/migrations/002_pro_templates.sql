@@ -1,5 +1,5 @@
 -- =============================================================================
--- Formalize — plantillas Pro persistentes + prueba gratuita de 1 descarga
+-- AI to Doc — plantillas Pro persistentes + prueba gratuita de 1 descarga
 -- Aplica con: supabase db push  (o pegando en el SQL editor del proyecto)
 -- =============================================================================
 

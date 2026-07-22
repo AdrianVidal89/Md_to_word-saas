@@ -389,7 +389,7 @@ function paintStep3(root) {
       return;
     }
 
-    const trialUsed = resp.headers.get("X-Formalize-Trial-Used") === "true";
+    const trialUsed = resp.headers.get("X-AiToDoc-Trial-Used") === "true";
     const blob = await resp.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
