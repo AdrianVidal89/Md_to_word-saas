@@ -19,6 +19,7 @@ tal y como señala el análisis de arquitectura del monolito original.
 
 import hashlib
 import os
+from datetime import date
 from pathlib import Path
 from typing import Optional
 
@@ -98,6 +99,15 @@ def _render_page(request: Request, filename: str) -> HTMLResponse:
     html = html.replace("__API_BASE_URL__", os.environ.get("PUBLIC_API_BASE_URL", ""))
     html = html.replace("__SITE_URL__", _site_url(request))
     html = html.replace("__ASSET_VERSION__", _asset_version())
+    # Verificación de Google Search Console: si GOOGLE_SITE_VERIFICATION está
+    # definida, inyecta el meta tag que Google pide para probar propiedad del
+    # dominio (método "HTML tag"). Sin la env var no se emite nada.
+    verification = os.environ.get("GOOGLE_SITE_VERIFICATION", "").strip()
+    meta = (
+        f'<meta name="google-site-verification" content="{verification}" />'
+        if verification else ""
+    )
+    html = html.replace("<!--SEO_VERIFICATION-->", meta)
     return HTMLResponse(html)
 
 
@@ -133,7 +143,18 @@ async def robots_txt(request: Request) -> PlainTextResponse:
 @app.get("/sitemap.xml")
 async def sitemap_xml(request: Request) -> Response:
     site = _site_url(request)
-    urls = "".join(f"<url><loc>{site}{path}</loc></url>" for path in ("/", "/pricing", "/api-access"))
+    today = date.today().isoformat()
+    # (path, changefreq, priority) — la home es la landing principal.
+    pages = (
+        ("/", "weekly", "1.0"),
+        ("/pricing", "monthly", "0.8"),
+        ("/api-access", "monthly", "0.5"),
+    )
+    urls = "".join(
+        f"<url><loc>{site}{path}</loc><lastmod>{today}</lastmod>"
+        f"<changefreq>{freq}</changefreq><priority>{prio}</priority></url>"
+        for path, freq, prio in pages
+    )
     xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
     return Response(content=xml, media_type="application/xml")
 
