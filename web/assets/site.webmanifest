@@ -1,0 +1,17 @@
+{
+  "name": "AI to Word",
+  "short_name": "AI to Word",
+  "description": "Paste your AI's answer, download a clean Word document instantly.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#059669",
+  "icons": [
+    {
+      "src": "/assets/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

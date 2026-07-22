@@ -12,6 +12,37 @@
 <meta property="og:url" content="__SITE_URL__/api-access" />
 <meta property="og:image" content="__SITE_URL__/assets/og-image.png" />
 <meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
+<link rel="apple-touch-icon" href="/assets/logo.svg" />
+<link rel="manifest" href="/assets/site.webmanifest" />
+<meta name="theme-color" content="#059669" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "__SITE_URL__/#organization",
+      "name": "AI to Word",
+      "url": "__SITE_URL__/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "__SITE_URL__/assets/logo.svg",
+        "width": 512,
+        "height": 512
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "__SITE_URL__/#website",
+      "url": "__SITE_URL__/",
+      "name": "AI to Word",
+      "publisher": { "@id": "__SITE_URL__/#organization" },
+      "inLanguage": "en"
+    }
+  ]
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
 <script>

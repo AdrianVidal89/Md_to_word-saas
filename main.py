@@ -24,7 +24,7 @@ from typing import Optional
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
@@ -114,6 +114,14 @@ async def pricing_page(request: Request) -> HTMLResponse:
 @app.get("/api-access", response_class=HTMLResponse)
 async def api_access_page(request: Request) -> HTMLResponse:
     return _render_page(request, "api-access.html")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon() -> RedirectResponse:
+    """Crawlers y navegadores piden /favicon.ico por convención aunque el HTML
+    declare el favicon SVG. Redirigimos al SVG (que Google Search sí indexa
+    como favicon) para no devolver un 404 en esa ruta."""
+    return RedirectResponse(url="/assets/logo.svg", status_code=301)
 
 
 @app.get("/robots.txt", response_class=PlainTextResponse)
